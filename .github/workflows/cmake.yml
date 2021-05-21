@@ -30,14 +30,14 @@ jobs:
 
     - name: Build
       run: cmake --build ${{github.workspace}}\build --config ${{env.BUILD_TYPE}}
-
-    - name: Release Exe
-      uses: marvinpinto/action-automatic-releases@latest
+    
+    - name: Upload Exe
+      uses: svenstaro/upload-release-action@v2
       with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        prerelease: false
-        files: |
-          **/EternalResourceExtractor.exe
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file_glob: true
+        file: "**\EternalResourceExtractor.exe"
+        tag: ${{ github.ref }}
   
   linux-build:
     runs-on: ubuntu-18.04
@@ -51,11 +51,11 @@ jobs:
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-
-    - name: Upload Binary
-      uses: svenstaro/upload-release-action@v2
+    
+    - name: Release Binary
+      uses: marvinpinto/action-automatic-releases@latest
       with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file_glob: true
-        file: "**/EternalResourceExtractor"
-        tag: ${{ github.ref }}
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        prerelease: false
+        files: |
+          **\EternalResourceExtractor
