@@ -36,7 +36,7 @@ jobs:
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file_glob: true
-        file: "**\EternalResourceExtractor.exe"
+        file: "**/EternalResourceExtractor.exe"
         tag: ${{ github.ref }}
   
   linux-build:
@@ -58,4 +58,4 @@ jobs:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
         prerelease: false
         files: |
-          **\EternalResourceExtractor
+          **/EternalResourceExtractor
