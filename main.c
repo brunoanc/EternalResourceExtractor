@@ -166,16 +166,6 @@ int main(int argc, char **argv)
         size_t len = 0;
         getdelim(&name, &len, '\0', resource);
 
-        char *dollar = strchr(name, '$');
-
-        if (dollar)
-            *dollar = '\0';
-        
-        char *tag = strrchr(name, '#');
-
-        if (tag)
-            name = tag + 1;
-
         names[i] = name;
     }
 
