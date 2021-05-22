@@ -24,24 +24,39 @@ OodLZ_DecompressFunc *OodLZ_Decompress;
 
 int oodle_init()
 {
-    FILE *oo2core = fopen("oo2core_8_win64.dll", "wb");
+    FILE *oo2core = fopen("oo2core_8_win64.dll", "rb");
 
-    if (!oo2core)
-        return -1;
+    if (!oo2core) {
+        oo2core = fopen("oo2core_8_win64.dll", "wb");
 
-    fwrite(oo2core_dll, 1, sizeof(oo2core_dll), oo2core);
-    fclose(oo2core);
+        if (!oo2core)
+            return -1;
+        
+        fwrite(oo2core_dll, 1, sizeof(oo2core_dll), oo2core);
+        fclose(oo2core);
+    }
+    else {
+        fclose(oo2core);
+    }
+
 #ifdef _WIN32
     HMODULE oodle = LoadLibraryA("./oo2core_8_win64.dll");
     OodLZ_Decompress = (OodLZ_DecompressFunc*)GetProcAddress(oodle, "OodleLZ_Decompress");
 #elif defined __linux__
-    FILE *linoodle = fopen("liblinoodle.so", "wb");
+    FILE *linoodle = fopen("liblinoodle.so", "rb");
 
-    if (!linoodle)
-        return -1;
+    if (!linoodle) {
+        linoodle = fopen("liblinoodle.so", "wb");
 
-    fwrite(linoodle_lib, 1, sizeof(linoodle_lib), linoodle);
-    fclose(linoodle);
+        if (!linoodle)
+            return -1;
+        
+        fwrite(linoodle_lib, 1, sizeof(linoodle_lib), linoodle);
+        fclose(linoodle);
+    }
+    else {
+        fclose(linoodle);
+    }
 
     void *oodle = dlopen("./liblinoodle.so", RTLD_LAZY);
     OodLZ_Decompress = dlsym(oodle, "OodleLZ_Decompress");
@@ -290,9 +305,6 @@ int main(int argc, char **argv)
 
             if (!OodLZ_Decompress) {
                 if(oodle_init() == -1) {
-                    remove("oo2core_8_win64.dll");
-                    remove("liblinoodle.so");
-
                     fprintf(stderr, "\nERROR: Failed to init oodle for decompressing!\n");
                     press_any_key();
                     return 1;
@@ -325,9 +337,6 @@ int main(int argc, char **argv)
 
         fseek(resource, curr_pos, SEEK_SET);
     }
-
-    remove("oo2core_8_win64.dll");
-    remove("liblinoodle.so");
 
     free(names);
     fclose(resource);
