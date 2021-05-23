@@ -2,15 +2,20 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <unistd.h>
+#include <limits.h>
 #include <errno.h>
 #include <sys/stat.h>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <direct.h>
+#define mkdir(x) _mkdir(x)
 #else
 #include <dlfcn.h>
 #include "linoodle_lib.h"
+#define mkdir(x) mkdir(x, 0777)
 #endif
 
 #include "utils.h"
@@ -42,7 +47,7 @@ int oodle_init()
 #ifdef _WIN32
     HMODULE oodle = LoadLibraryA("./oo2core_8_win64.dll");
     OodLZ_Decompress = (OodLZ_DecompressFunc*)GetProcAddress(oodle, "OodleLZ_Decompress");
-#elif defined __linux__
+#else
     FILE *linoodle = fopen("liblinoodle.so", "rb");
 
     if (!linoodle) {
@@ -70,47 +75,75 @@ int oodle_init()
 
 int main(int argc, char **argv)
 {
+    char buffer[8192];
+    setvbuf(stdout, buffer, _IOFBF, sizeof(buffer));
+
     printf("EternalResourceExtractor v1.0 by PowerBall253\n\n");
 
     if (argc > 1 && !strcmp(argv[1], "--help")) {
         printf("Usage:\n");
         printf("%s [path to .resources file] [out path]\n", argv[0]);
+        fflush(stdout);
         return 0;
     }
 
-    char *resource_path = malloc(256);
-    char *out_path = malloc(256);
+    char resource_path[PATH_MAX];
+    char out_path[PATH_MAX];
 
     switch (argc) {
         case 1:
             printf("Input the path to the .resources file: ");
-            fgets(resource_path, 256, stdin);
+            fflush(stdout);
+            fgets(resource_path, PATH_MAX, stdin);
+
             printf("Input the path to the out directory: ");
-            fgets(out_path, 256, stdin);
+            fflush(stdout);
+            fgets(out_path, PATH_MAX, stdin);
+
             printf("\n");
             break;
         case 2:
-            strncpy(resource_path, argv[1], 256);
-            *(resource_path + 256 - 1) = '\0';
+            strncpy(resource_path, argv[1], PATH_MAX);
+            resource_path[PATH_MAX - 1] = '\0';
 
             printf("Input the path to the out directory: ");
-            fgets(out_path, 256, stdin);
+            fflush(stdout);
+            fgets(out_path, PATH_MAX, stdin);
+
             printf("\n");
             break;
         default:
-            strncpy(resource_path, argv[1], 256);
-            strncpy(out_path, argv[2], 256);
-            *(resource_path + 256 - 1) = '\0';
-            *(out_path + 256 - 1) = '\0';
+            strncpy(resource_path, argv[1], PATH_MAX);
+            strncpy(out_path, argv[2], PATH_MAX);
+
+            resource_path[PATH_MAX - 1] = '\0';
+            out_path[PATH_MAX - 1] = '\0';
+
             break;
     }
 
-    remove_quotes_and_newline(&resource_path);
-    remove_quotes_and_newline(&out_path);
+    strcpy(resource_path, fmt_path(resource_path));
+    strcpy(out_path, fmt_path(out_path));
+
+#ifdef _WIN32
+    char *full_path = _fullpath(NULL, out_path, PATH_MAX);
+
+    if (!full_path) {
+        fflush(stdout);
+        fprintf(stderr, "\nERROR: Failed to get absolute path from out path!\n");
+        press_any_key();
+        return 1;
+    }
+
+    strcpy(out_path, full_path);
+
+    free(full_path);
+#endif
 
     FILE *resource = fopen(resource_path, "rb");
 
     if (!resource) {
+        fflush(stdout);
         fprintf(stderr, "\nERROR: Failed to open %s for reading!\n", resource_path);
         press_any_key();
         return 1;
@@ -120,8 +153,15 @@ int main(int argc, char **argv)
     fread(signature, 1, sizeof(signature), resource);
 
     if (memcmp(signature, "IDCL", 4)) {
+        fflush(stdout);
         fprintf(stderr, "\nERROR: %s is not a valid .resources file!\n", resource_path);
         press_any_key();
+        return 1;
+    }
+
+    if (mkdir(out_path) == -1 && errno != EEXIST) {
+        fflush(stdout);
+        fprintf(stderr, "\nERROR: Failed to create out directory!\n");
         return 1;
     }
 
@@ -162,6 +202,7 @@ int main(int argc, char **argv)
     char **names = malloc(name_count * sizeof(char*));
 
     if (!names) {
+        fflush(stdout);
         fprintf(stderr, "\nERROR: Failed to allocate memory!\n");
         press_any_key();
         return 1;
@@ -232,15 +273,22 @@ int main(int argc, char **argv)
 
         printf("Extracting %s...\n", name);
 
-        char *path = malloc(strlen(name) + strlen(out_path) + 2);
+        char *path = malloc(strlen(name) + strlen(out_path) + 10);
 
         if (!path) {
+            fflush(stdout);
             fprintf(stderr, "\nERROR: Failed to allocate memory!\n");
             press_any_key();
             return 1;
         }
 
-        strcpy(path, out_path);
+        *path = '\0';
+
+#ifdef _WIN32
+        strcat(path, "\\\\?\\");
+#endif
+
+        strcat(path, out_path);
 
         if (*(path + strlen(path) - 1) != separator_char) {
             char separator_str[2] = {separator_char, '\0'};
@@ -249,7 +297,37 @@ int main(int argc, char **argv)
 
         strcat(path, name);
         change_separator(path);
-        mkpath(path);
+
+#ifdef _WIN32
+        wchar_t *path_wstr = char_to_wchar(path);
+
+        if (!path_wstr) {
+            fflush(stdout);
+            fprintf(stderr, "\nERROR: Failed to create path for extraction!\n");
+            return 1;
+        }
+
+        long start_pos = 4 + strlen(out_path);
+
+        if (*(out_path + strlen(out_path)) == separator_char)
+            start_pos = start_pos + 1;
+        
+        int res = mkpath(path_wstr, start_pos);
+#else
+        long start_pos = strlen(out_path);
+
+        if (*(out_path + strlen(out_path)) == separator_char)
+            start_pos = start_pos + 1;
+
+        int res = mkpath(path, start_pos);
+#endif
+
+        if (res == -1) {
+            fflush(stdout);
+            fprintf(stderr, "\nERROR: Failed to create path for extraction!\n");
+            press_any_key();
+            return 1;
+        }
 
         if (size == z_size) {
             fseek(resource, offset, SEEK_SET);
@@ -257,16 +335,23 @@ int main(int argc, char **argv)
             unsigned char *file_bytes = malloc(z_size);
 
             if (!file_bytes) {
+                fflush(stdout);
                 fprintf(stderr, "\nERROR: Failed to allocate memory!\n");
                 press_any_key();
                 return 1;
             }
 
             fread(file_bytes, 1, z_size, resource);
-            
+
+#ifdef _WIN32
+            FILE *f = _wfopen(path_wstr, L"wb");
+            free(path_wstr);
+#else
             FILE *f = fopen(path, "wb");
+#endif
 
             if (!f) {
+                fflush(stdout);
                 fprintf(stderr, "\nERROR: Failed to open %s for writing!\n", path);
                 press_any_key();
                 return 1;
@@ -288,6 +373,7 @@ int main(int argc, char **argv)
             unsigned char *enc_bytes = malloc(z_size);
 
             if (!enc_bytes) {
+                fflush(stdout);
                 fprintf(stderr, "\nERROR: Failed to allocate memory!\n");
                 press_any_key();
                 return 1;
@@ -304,7 +390,8 @@ int main(int argc, char **argv)
             }
 
             if (!OodLZ_Decompress) {
-                if(oodle_init() == -1) {
+                if (oodle_init() == -1) {
+                    fflush(stdout);
                     fprintf(stderr, "\nERROR: Failed to init oodle for decompressing!\n");
                     press_any_key();
                     return 1;
@@ -312,6 +399,7 @@ int main(int argc, char **argv)
             }
 
             if (OodLZ_Decompress(enc_bytes, z_size, dec_bytes, size, 0, 0, 0, NULL, 0, NULL, NULL, NULL, 0, 0) != size) {
+                fflush(stdout);
                 fprintf(stderr, "\nERROR: Failed to decompress %s!\n", name);
                 press_any_key();
                 return 1;
@@ -319,9 +407,15 @@ int main(int argc, char **argv)
 
             free(enc_bytes);
 
+#ifdef _WIN32
+            FILE *f = _wfopen(path_wstr, L"wb");
+            free(path_wstr);
+#else
             FILE *f = fopen(path, "wb");
+#endif
 
             if (!f) {
+                fflush(stdout);
                 fprintf(stderr, "\nERROR: Failed to open %s for writing!\n", path);
                 press_any_key();
                 return 1;
@@ -338,9 +432,11 @@ int main(int argc, char **argv)
         fseek(resource, curr_pos, SEEK_SET);
     }
 
-    free(names);
     fclose(resource);
 
+    free(names);
+
     printf("\nDone, %d files extracted.\n", file_count);
+    fflush(stdout);
     press_any_key();
 }

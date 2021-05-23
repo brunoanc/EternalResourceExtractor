@@ -5,14 +5,15 @@
 
 #ifdef _WIN32
 #define separator_char '\\'
-#elif defined __linux__
+wchar_t *char_to_wchar(char *path);
+#else
 #define separator_char '/'
 #endif
 
 void press_any_key();
 void change_separator(char *path);
-int mkpath(char *file_path);
-void remove_quotes_and_newline(char **str);
+int mkpath(void *file_path, unsigned long start_pos);
+char *fmt_path(char *str);
 ssize_t getdelim(char **buf, size_t *bufsiz, int delimiter, FILE *fp);
 
 #endif
