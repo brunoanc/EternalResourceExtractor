@@ -27,7 +27,7 @@ typedef int OodLZ_DecompressFunc(uint8_t *src_buf, int src_len, uint8_t *dst, si
 
 OodLZ_DecompressFunc *OodLZ_Decompress;
 
-int oodle_init()
+int oodle_init(void)
 {
     FILE *oo2core = fopen("oo2core_8_win64.dll", "rb");
 

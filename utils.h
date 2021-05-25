@@ -10,7 +10,7 @@ wchar_t *char_to_wchar(char *path);
 #define separator_char '/'
 #endif
 
-void press_any_key();
+void press_any_key(void);
 void change_separator(char *path);
 int mkpath(void *file_path, unsigned long start_pos);
 char *fmt_path(char *str);

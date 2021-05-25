@@ -20,7 +20,7 @@
 #endif
 
 #ifdef _WIN32
-bool __cdecl check_terminal()
+bool check_terminal(void)
 {
     DWORD *buffer = malloc(sizeof(DWORD));
 
@@ -57,7 +57,7 @@ wchar_t *char_to_wchar(char *path)
 }
 #endif
 
-void press_any_key()
+void press_any_key(void)
 {
 #ifdef _WIN32
     if (check_terminal())
