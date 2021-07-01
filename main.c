@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <stdint.h>
-#include <unistd.h>
 #include <limits.h>
 #include <errno.h>
-#include <sys/stat.h>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -13,6 +12,8 @@
 #include <direct.h>
 #define mkdir(x) _mkdir(x)
 #else
+#include <unistd.h>
+#include <sys/stat.h>
 #include <dlfcn.h>
 #include "linoodle_lib.h"
 #define mkdir(x) mkdir(x, 0777)
@@ -21,13 +22,13 @@
 #include "utils.h"
 #include "oo2core_dll.h"
 
-typedef int OodLZ_DecompressFunc(uint8_t *src_buf, int src_len, uint8_t *dst, size_t dst_size,
-    int fuzz, int crc, int verbose,
-    uint8_t *dst_base, size_t e, void *cb, void *cb_ctx, void *scratch, size_t scratch_size, int threadPhase);
+typedef int32_t OodLZ_DecompressFunc(uint8_t *src_buf, int32_t src_len, uint8_t *dst, size_t dst_size,
+    int32_t fuzz, int32_t crc, int32_t verbose,
+    uint8_t *dst_base, size_t e, void *cb, void *cb_ctx, void *scratch, size_t scratch_size, int32_t threadPhase);
 
 OodLZ_DecompressFunc *OodLZ_Decompress;
 
-int oodle_init(void)
+bool oodle_init(void)
 {
     FILE *oo2core = fopen("oo2core_8_win64.dll", "rb");
 
@@ -35,7 +36,7 @@ int oodle_init(void)
         oo2core = fopen("oo2core_8_win64.dll", "wb");
 
         if (!oo2core)
-            return -1;
+            return false;
         
         fwrite(oo2core_dll, 1, sizeof(oo2core_dll), oo2core);
         fclose(oo2core);
@@ -54,7 +55,7 @@ int oodle_init(void)
         linoodle = fopen("liblinoodle.so", "wb");
 
         if (!linoodle)
-            return -1;
+            return false;
         
         fwrite(linoodle_lib, 1, sizeof(linoodle_lib), linoodle);
         fclose(linoodle);
@@ -68,9 +69,9 @@ int oodle_init(void)
 #endif
 
     if (!OodLZ_Decompress)
-        return -1;
+        return false;
     
-    return 0;
+    return true;
 }
 
 int main(int argc, char **argv)
@@ -208,7 +209,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    long curr_pos = ftell(resource);
+    size_t curr_pos = ftell(resource);
 
     for (int i = 0; i < name_count; i++) {
         fseek(resource, curr_pos + i * 8, SEEK_SET);
@@ -307,14 +308,14 @@ int main(int argc, char **argv)
             return 1;
         }
 
-        long start_pos = 4 + strlen(out_path);
+        size_t start_pos = 4 + strlen(out_path);
 
         if (*(out_path + strlen(out_path)) == separator_char)
             start_pos = start_pos + 1;
         
         int res = mkpath(path_wstr, start_pos);
 #else
-        long start_pos = strlen(out_path);
+        size_t start_pos = strlen(out_path);
 
         if (*(out_path + strlen(out_path)) == separator_char)
             start_pos = start_pos + 1;
@@ -363,7 +364,7 @@ int main(int argc, char **argv)
             free(file_bytes);
         }
         else {
-            if (zip_flags == 4) {
+            if (zip_flags & 4) {
                 offset += 12;
                 z_size -= 12;
             }
@@ -390,7 +391,7 @@ int main(int argc, char **argv)
             }
 
             if (!OodLZ_Decompress) {
-                if (oodle_init() == -1) {
+                if (!oodle_init()) {
                     fflush(stdout);
                     fprintf(stderr, "\nERROR: Failed to init oodle for decompressing!\n");
                     press_any_key();
