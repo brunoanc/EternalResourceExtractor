@@ -6,6 +6,9 @@ set(CMAKE_C_STANDARD 99)
 file(GLOB SOURCES
         ./main.c
         ./utils.c
+        ./utils.h
+        ./linoodle_lib.h
+        ./oo2core_dll.h
         ./getdelim.c
         )
 
