@@ -1,7 +1,7 @@
-#include <stdio.h>
-
 #ifndef UTILS_H
 #define UTILS_H
+
+#include <stdio.h>
 
 #ifdef _WIN32
 #define separator_char '\\'
