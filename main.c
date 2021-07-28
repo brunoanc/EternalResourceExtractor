@@ -22,16 +22,19 @@
 #include "utils.h"
 #include "oo2core_dll.h"
 
+// Oodle typedef
 typedef int32_t OodLZ_DecompressFunc(uint8_t *src_buf, int32_t src_len, uint8_t *dst, size_t dst_size,
     int32_t fuzz, int32_t crc, int32_t verbose,
     uint8_t *dst_base, size_t e, void *cb, void *cb_ctx, void *scratch, size_t scratch_size, int32_t threadPhase);
 
 OodLZ_DecompressFunc *OodLZ_Decompress;
 
+// Load oodle dll
 bool oodle_init(void)
 {
     FILE *oo2core = fopen("oo2core_8_win64.dll", "rb");
 
+    // If oodle is not found, write it
     if (!oo2core) {
         oo2core = fopen("oo2core_8_win64.dll", "wb");
 
@@ -46,11 +49,13 @@ bool oodle_init(void)
     }
 
 #ifdef _WIN32
+    // Load OodleLZ_Decompress from oodle
     HMODULE oodle = LoadLibraryA("./oo2core_8_win64.dll");
     OodLZ_Decompress = (OodLZ_DecompressFunc*)GetProcAddress(oodle, "OodleLZ_Decompress");
 #else
     FILE *linoodle = fopen("liblinoodle.so", "rb");
 
+    // If linoodle is not found, write it
     if (!linoodle) {
         linoodle = fopen("liblinoodle.so", "wb");
 
@@ -64,6 +69,7 @@ bool oodle_init(void)
         fclose(linoodle);
     }
 
+    // Load OodleLZ_Decompress from linoodle
     void *oodle = dlopen("./liblinoodle.so", RTLD_LAZY);
     OodLZ_Decompress = dlsym(oodle, "OodleLZ_Decompress");
 #endif
@@ -76,11 +82,13 @@ bool oodle_init(void)
 
 int main(int argc, char **argv)
 {
+    // Buffer stdout
     char buffer[8192];
     setvbuf(stdout, buffer, _IOFBF, sizeof(buffer));
 
     printf("EternalResourceExtractor v1.0 by PowerBall253\n\n");
 
+    // Print help
     if (argc > 1 && !strcmp(argv[1], "--help")) {
         printf("Usage:\n");
         printf("%s [path to .resources file] [out path]\n", argv[0]);
@@ -88,6 +96,7 @@ int main(int argc, char **argv)
         return 0;
     }
 
+    // Get resource & out path
     char resource_path[PATH_MAX];
     char out_path[PATH_MAX];
 
@@ -127,6 +136,7 @@ int main(int argc, char **argv)
     strcpy(out_path, fmt_path(out_path));
 
 #ifdef _WIN32
+    // Get full filepath, needed for PATH_MAX workaround
     char *full_path = _fullpath(NULL, out_path, PATH_MAX);
 
     if (!full_path) {
@@ -137,10 +147,10 @@ int main(int argc, char **argv)
     }
 
     strcpy(out_path, full_path);
-
     free(full_path);
 #endif
 
+    // Open the resource file
     FILE *resource = fopen(resource_path, "rb");
 
     if (!resource) {
@@ -150,6 +160,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    // Look for IDCL magic
     char signature[4];
     fread(signature, 1, sizeof(signature), resource);
 
@@ -160,12 +171,14 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    // Create out path
     if (mkdir(out_path) == -1 && errno != EEXIST) {
         fflush(stdout);
         fprintf(stderr, "\nERROR: Failed to create out directory!\n");
         return 1;
     }
 
+    // Read resource data
     fseek(resource, 28, SEEK_CUR);
 
     uint32_t file_count;
@@ -272,8 +285,10 @@ int main(int argc, char **argv)
 
         char *name = names[name_id];
 
+        // Extract file
         printf("Extracting %s...\n", name);
 
+        // Get out path
         char *path = malloc(strlen(name) + strlen(out_path) + 10);
 
         if (!path) {
@@ -286,6 +301,7 @@ int main(int argc, char **argv)
         *path = '\0';
 
 #ifdef _WIN32
+        // Add PATH_MAX disabler
         strcat(path, "\\\\?\\");
 #endif
 
@@ -299,6 +315,7 @@ int main(int argc, char **argv)
         strcat(path, name);
         change_separator(path);
 
+        // Create out dir, bypassing PATH_MAX restriction on Windows
 #ifdef _WIN32
         wchar_t *path_wstr = char_to_wchar(path);
 
@@ -331,6 +348,7 @@ int main(int argc, char **argv)
         }
 
         if (size == z_size) {
+            // File is decompressed, extract as-is
             fseek(resource, offset, SEEK_SET);
 
             unsigned char *file_bytes = malloc(z_size);
@@ -364,6 +382,7 @@ int main(int argc, char **argv)
             free(file_bytes);
         }
         else {
+            // File is compressed, decompress with oodle
             if (zip_flags & 4) {
                 offset += 12;
                 z_size -= 12;
@@ -437,6 +456,7 @@ int main(int argc, char **argv)
 
     free(names);
 
+    // Exit
     printf("\nDone, %d files extracted.\n", file_count);
     fflush(stdout);
     press_any_key();

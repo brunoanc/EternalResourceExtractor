@@ -20,24 +20,15 @@
 #endif
 
 #ifdef _WIN32
+// Check if process is running on a terminal or through Explorer
 bool check_terminal(void)
 {
-    DWORD *buffer = malloc(sizeof(DWORD));
-
-    if (!buffer)
-        return false;
-
+    DWORD buffer[sizeof(DWORD)];
     DWORD count = GetConsoleProcessList(buffer, 1);
-    free(buffer);
-
-    if (count == 1) {
-        return false;
-    }
-    else {
-        return true;
-    }
+    return count != 1;
 }
 
+// Convert char string to wchar_t
 wchar_t *char_to_wchar(char *path)
 {
     long wstr_len = MultiByteToWideChar(CP_UTF8, 0, path, -1, NULL, 0);
@@ -57,6 +48,7 @@ wchar_t *char_to_wchar(char *path)
 }
 #endif
 
+// Display the 'press any key to continue' if process is running through Explorer (Windows only)
 void press_any_key(void)
 {
 #ifdef _WIN32
@@ -68,7 +60,7 @@ void press_any_key(void)
 #endif
 }
 
-
+// Change the path separator
 void change_separator(char *path)
 {
 #ifdef _WIN32
@@ -79,6 +71,7 @@ void change_separator(char *path)
 #endif
 }
 
+// Recursive mkdir
 int mkpath(void *file_path, unsigned long start_pos)
 {
 #ifdef _WIN32
@@ -103,6 +96,7 @@ int mkpath(void *file_path, unsigned long start_pos)
     return 0;
 }
 
+// Format path by removing whitespace and double quotes
 char *fmt_path(char *str)
 {
     char *newline = strchr(str, '\n');
