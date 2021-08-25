@@ -1,7 +1,7 @@
 # EternalResourceExtractor
 ![Build Status](https://github.com/PowerBall253/EternalResourceExtractor/actions/workflows/build.yml/badge.svg)
 
-Small C utility to extract files from a DOOM Eternal .resources file.
+Small C++ utility to extract files from a DOOM Eternal .resources file.
 
 ## Features
 * Supports launching from command line with arguments, double clicking on it, and dragging and dropping.
@@ -25,12 +25,12 @@ The project uses CMake to compile. It also needs MSVC or the MinGW toolchain on 
 First clone the repo by running:
 
 ```
-git clone https://github.com/PowerBall253/EternalResourceExtractorCpp.git
+git clone https://github.com/PowerBall253/EternalResourceExtractor.git
 ```
 
 Then, generate the makefile by running:
 ```
-cd EternalResourceExtractorCpp
+cd EternalResourceExtractor
 mkdir build
 cd build
 cmake .. # Append "-G 'MSYS Makefiles'" on MSYS
