@@ -128,9 +128,6 @@ int main(int argc, char **argv)
     memPosition += 16;
 
     uint64_t dummyOffset = memoryMappedFile->readUint64(memPosition) + dummyCount * sizeof(dummyCount);
-    memPosition += 8;
-
-    uint64_t dataOffset = memoryMappedFile->readUint64(memPosition);
 
     memPosition = namesOffset;
 
@@ -190,10 +187,6 @@ int main(int argc, char **argv)
         typeIdOffset = typeIdOffset * 8 + dummyOffset;
         nameIdOffset = (nameIdOffset + 1) * 8 + dummyOffset;
         currentPosition = memPosition;
-        memPosition = typeIdOffset;
-
-        uint64_t typeId = memoryMappedFile->readUint64(memPosition);
-
         memPosition = nameIdOffset;
 
         uint64_t nameId = memoryMappedFile->readUint64(memPosition);
