@@ -13,6 +13,10 @@
 #endif
 
 #ifdef _WIN32
+// "\\?\" alongside the wide string functions is used to bypass PATH_MAX
+// Check https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=cmd for details 
+#define PATH_MAX_DISABLER L"\\\\?\\"
+
 // Check if process is running on a terminal by checking the console processes
 static bool isRunningOnTerminal()
 {
@@ -33,6 +37,7 @@ void pressAnyKey()
 #endif
 }
 
+// Display error and exit
 void throwError(const std::string& error)
 {
     std::cout.flush();
@@ -47,7 +52,7 @@ std::error_code mkpath(fs::path path)
     path = path.remove_filename();
     std::error_code ec;
 #ifdef _WIN32
-    fs::create_directories(L"\\\\?\\" + path.wstring(), ec);
+    fs::create_directories(PATH_MAX_DISABLER + path.wstring(), ec);
 #else
     fs::create_directories(path, ec);
 #endif
@@ -73,7 +78,7 @@ FILE *openFile(const fs::path &path, const char *mode)
     for (size_t i = 0; i < strlen(mode); i++)
         wideMode.push_back((wchar_t)mode[i]);
 
-    return _wfopen((L"\\\\?\\" + path.wstring()).c_str(), wideMode.c_str());
+    return _wfopen((PATH_MAX_DISABLER + path.wstring()).c_str(), wideMode.c_str());
 #else
     return fopen(path.c_str(), mode);
 #endif
