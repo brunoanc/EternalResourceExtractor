@@ -16,6 +16,5 @@ std::error_code mkpath(fs::path path);
 std::string formatPath(std::string path);
 FILE *openFile(const fs::path &path, const char *mode);
 bool oodleInit(OodLZ_DecompressFunc **OodLZ_Decompress);
-size_t fgetdelim(char **buf, size_t *bufsiz, int delimiter, FILE *fp);
 
 #endif

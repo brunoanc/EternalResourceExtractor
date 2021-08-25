@@ -5,6 +5,7 @@
 #include <cstring>
 #include <chrono>
 #include "utils.hpp"
+#include "mmap/mmap.hpp"
 
 namespace chrono = std::chrono;
 
@@ -85,20 +86,24 @@ int main(int argc, char **argv)
         outPath.push_back(fs::path::preferred_separator);
 
     // Open the resource file
-    FILE *resource = openFile(resourcePath, "rb");
+    MemoryMappedFile memoryMappedFile;
+    size_t memPosition = 0;
 
-    if (resource == nullptr)
-        throwError("Failed to open " + resourcePath + " for reading: " + strerror(errno));
+    try {
+        memoryMappedFile = MemoryMappedFile(resourcePath);
+    }
+    catch (std::exception &e) {
+        throwError("Failed to open " + resourcePath + " for reading.");
+    }
 
     if (!oodleInit(&OodLZ_Decompress))
         throwError("Failed to init oodle for decompressing.");
 
     // Look for IDCL magic
-    char signature[4];
-    fread(signature, 1, sizeof(signature), resource);
-
-    if (std::memcmp(signature, "IDCL", 4) != 0)
+    if (std::memcmp(memoryMappedFile.memp, "IDCL", 4) != 0)
         throwError(fs::path(resourcePath).filename().string() + " is not a valid .resources file.");
+
+    memPosition += 4;
 
     // Create out path
     ec = mkpath(outPath);
@@ -107,111 +112,91 @@ int main(int argc, char **argv)
         throwError("Failed to create out directory: " + ec.message());
 
     // Read resource data
-    fseek(resource, 28, SEEK_CUR);
+    memPosition += 28;
 
-    uint32_t fileCount;
-    fread(&fileCount, sizeof(fileCount), 1, resource);
+    uint32_t fileCount = memoryMappedFile.readUint32(memPosition);
+    memPosition += 4;
 
-    fseek(resource, 4, SEEK_CUR);
-
-    uint32_t dummyCount;
-    fread(&dummyCount, sizeof(dummyCount), 1, resource);
-
-    fseek(resource, 20, SEEK_CUR);
+    uint32_t dummyCount = memoryMappedFile.readUint32(memPosition);
+    memPosition += 24;
 
     // Get offsets
-    uint64_t namesOffset;
-    fread(&namesOffset, sizeof(namesOffset), 1, resource);
+    uint64_t namesOffset = memoryMappedFile.readUint64(memPosition);
+    memPosition += 16;
 
-    fseek(resource, 8, SEEK_CUR);
+    uint64_t infoOffset = memoryMappedFile.readUint64(memPosition);
+    memPosition += 16;
 
-    uint64_t infoOffset;
-    fread(&infoOffset, sizeof(infoOffset), 1, resource);
+    uint64_t dummyOffset = memoryMappedFile.readUint64(memPosition) + dummyCount * sizeof(dummyCount);
+    memPosition += 8;
 
-    fseek(resource, 8, SEEK_CUR);
+    uint64_t dataOffset = memoryMappedFile.readUint64(memPosition);
 
-    uint64_t dummyOffset;
-    fread(&dummyOffset, sizeof(dummyOffset), 1, resource);
-    dummyOffset += dummyCount * sizeof(uint32_t);
-
-    uint64_t dataOffset;
-    fread(&dataOffset, sizeof(dataOffset), 1, resource);
-
-    fseek(resource, static_cast<long>(namesOffset), SEEK_SET);
+    memPosition = namesOffset;
 
     // Get filenames for exporting
-    uint64_t nameCount;
-    fread(&nameCount, sizeof(nameCount), 1, resource);
+    uint64_t nameCount = memoryMappedFile.readUint64(memPosition);
+    memPosition += 8;
 
     std::vector<std::string> names;
     names.reserve(nameCount);
 
-    size_t currentPosition = ftell(resource);
+    std::vector<char> name;
+    name.reserve(256);
+
+    size_t currentPosition = memPosition;
 
     for (int i = 0; i < nameCount; i++) {
-        fseek(resource, static_cast<long>(currentPosition) + i * 8, SEEK_SET);
+        memPosition = currentPosition + i * 8;
 
-        uint64_t currentNameOffset;
-        fread(&currentNameOffset, sizeof(currentNameOffset), 1, resource);
+        uint64_t currentNameOffset = memoryMappedFile.readUint64(memPosition);
 
-        fseek(resource, static_cast<long>(namesOffset + nameCount * 8 + currentNameOffset + 8), SEEK_SET);
+        memPosition = namesOffset + nameCount * 8 + currentNameOffset + 8;
 
-        char *name = nullptr;
-        size_t len = 0;
-        len = fgetdelim(&name, &len, '\0', resource);
+        do {
+            name.push_back(*(memoryMappedFile.memp + memPosition));
+            memPosition++;
+        } while (*(memoryMappedFile.memp + memPosition) != '\0');
 
-        if (len == -1)
-            throwError("Failed to read file names from resource.");
-
-        names.emplace_back(name, len);
-        free(name);
+        names.emplace_back(name.data(), name.size());
     }
 
-    fseek(resource, static_cast<long>(infoOffset), SEEK_SET);
+    memPosition = infoOffset;
 
     // Extract files
     for (int i = 0; i < fileCount; i++) {
-        fseek(resource, 24, SEEK_CUR);
+        memPosition += 24;
 
         // Read file info for extracting
-        uint64_t typeIdOffset;
-        fread(&typeIdOffset, sizeof(typeIdOffset), 1, resource);
+        uint64_t typeIdOffset = memoryMappedFile.readUint64(memPosition);
+        memPosition += 8;
 
-        uint64_t nameIdOffset;
-        fread(&nameIdOffset, sizeof(nameIdOffset), 1, resource);
+        uint64_t nameIdOffset = memoryMappedFile.readUint64(memPosition);
+        memPosition += 24;
 
-        fseek(resource, 16, SEEK_CUR);
+        uint64_t offset = memoryMappedFile.readUint64(memPosition);
+        memPosition += 8;
 
-        uint64_t offset;
-        fread(&offset, sizeof(offset), 1, resource);
+        uint64_t zSize = memoryMappedFile.readUint64(memPosition);
+        memPosition += 8;
 
-        uint64_t zSize;
-        fread(&zSize, sizeof(zSize), 1, resource);
+        uint64_t size = memoryMappedFile.readUint64(memPosition);
+        memPosition += 40;
 
-        uint64_t size;
-        fread(&size, sizeof(size), 1, resource);
-
-        fseek(resource, 32, SEEK_CUR);
-
-        uint64_t zipFlags;
-        fread(&zipFlags, sizeof(zipFlags), 1, resource);
-
-        fseek(resource, 24, SEEK_CUR);
+        uint64_t zipFlags = memoryMappedFile.readUint64(memPosition);
+        memPosition += 32;
 
         typeIdOffset = typeIdOffset * 8 + dummyOffset;
         nameIdOffset = (nameIdOffset + 1) * 8 + dummyOffset;
+        currentPosition = memPosition;
+        memPosition = typeIdOffset;
 
-        currentPosition = ftell(resource);
+        uint64_t typeId = memoryMappedFile.readUint64(memPosition);
 
-        fseek(resource, static_cast<long>(typeIdOffset), SEEK_SET);
+        memPosition = nameIdOffset;
 
-        uint64_t typeId;
-        fread(&typeId, sizeof(typeId), 1, resource);
-
-        fseek(resource, static_cast<long>(nameIdOffset), SEEK_SET);
-
-        uint64_t nameId;
-        fread(&nameId, sizeof(nameId), 1, resource);
+        uint64_t nameId = memoryMappedFile.readUint64(memPosition);
+        memPosition += 8;
 
         auto name = names[nameId];
 
@@ -228,26 +213,13 @@ int main(int argc, char **argv)
 
         if (size == zSize) {
             // File is decompressed, extract as-is
-            fseek(resource, static_cast<long>(offset), SEEK_SET);
-
-            // Read file from resource
-            auto fileBytes = new (std::nothrow) unsigned char[zSize];
-
-            if (fileBytes == nullptr)
-                throwError("Failed to allocate memory for extraction.");
-
-            fread(fileBytes, 1, zSize, resource);
-
-            // Write file to disk
             FILE *exportFile = openFile(path, "wb");
 
             if (exportFile == nullptr)
                 throwError("Failed to open " + path + " for writing: " + strerror(errno));
 
-            fwrite(fileBytes, 1, zSize, exportFile);
+            fwrite(memoryMappedFile.memp + offset, 1, size, exportFile);
             fclose(exportFile);
-
-            delete[] fileBytes;
         }
         else {
             // File is compressed, decompress with oodle
@@ -258,26 +230,15 @@ int main(int argc, char **argv)
                 zSize -= 12;
             }
 
-            fseek(resource, static_cast<long>(offset), SEEK_SET);
-
-            // Read file from resource
-            auto *encBytes = new (std::nothrow) unsigned char[zSize];
-
-            if (encBytes == nullptr)
-                throwError("Failed to allocate memory for extraction.");
-
-            fread(encBytes, 1, zSize, resource);
-
             // Decompress file
             auto *decBytes = new (std::nothrow) unsigned char[size];
 
             if (decBytes == nullptr)
                 throwError("Failed to allocate memory for extraction.");
 
-            if (OodLZ_Decompress(encBytes, static_cast<int32_t>(zSize), decBytes, size, 0, 0, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, 0) != size)
+            if (OodLZ_Decompress(memoryMappedFile.memp + offset, static_cast<int32_t>(zSize),
+            decBytes, size, 0, 0, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, 0) != size)
                 throwError("Failed to decompress " + name + ".");
-
-            delete[] encBytes;
 
             // Write file to disk
             FILE *exportFile = openFile(path, "wb");
@@ -292,10 +253,10 @@ int main(int argc, char **argv)
         }
 
         // Seek back to info section
-        fseek(resource, static_cast<long>(currentPosition), SEEK_SET);
+        memPosition = currentPosition;
     }
 
-    fclose(resource);
+    memoryMappedFile.unmapFile();
 
     // Exit
     chrono::steady_clock::time_point end = chrono::steady_clock::now();

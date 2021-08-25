@@ -9,7 +9,8 @@ file(GLOB SOURCES
         ./utils.hpp
         ./linoodle.hpp
         ./oo2core.hpp
-        ./getdelim.cpp
+        ./mmap/mmap.cpp
+        ./mmap/mmap.hpp
         )
 
 if (MSVC)
