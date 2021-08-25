@@ -86,11 +86,11 @@ int main(int argc, char **argv)
         outPath.push_back(fs::path::preferred_separator);
 
     // Open the resource file
-    MemoryMappedFile memoryMappedFile;
+    MemoryMappedFile *memoryMappedFile;
     size_t memPosition = 0;
 
     try {
-        memoryMappedFile = MemoryMappedFile(resourcePath);
+        memoryMappedFile = new MemoryMappedFile(resourcePath);
     }
     catch (std::exception &e) {
         throwError("Failed to open " + resourcePath + " for reading.");
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
         throwError("Failed to init oodle for decompressing.");
 
     // Look for IDCL magic
-    if (std::memcmp(memoryMappedFile.memp, "IDCL", 4) != 0)
+    if (std::memcmp(memoryMappedFile->memp, "IDCL", 4) != 0)
         throwError(fs::path(resourcePath).filename().string() + " is not a valid .resources file.");
 
     memPosition += 4;
@@ -114,28 +114,28 @@ int main(int argc, char **argv)
     // Read resource data
     memPosition += 28;
 
-    uint32_t fileCount = memoryMappedFile.readUint32(memPosition);
-    memPosition += 4;
+    uint32_t fileCount = memoryMappedFile->readUint32(memPosition);
+    memPosition += 8;
 
-    uint32_t dummyCount = memoryMappedFile.readUint32(memPosition);
+    uint32_t dummyCount = memoryMappedFile->readUint32(memPosition);
     memPosition += 24;
 
     // Get offsets
-    uint64_t namesOffset = memoryMappedFile.readUint64(memPosition);
+    uint64_t namesOffset = memoryMappedFile->readUint64(memPosition);
     memPosition += 16;
 
-    uint64_t infoOffset = memoryMappedFile.readUint64(memPosition);
+    uint64_t infoOffset = memoryMappedFile->readUint64(memPosition);
     memPosition += 16;
 
-    uint64_t dummyOffset = memoryMappedFile.readUint64(memPosition) + dummyCount * sizeof(dummyCount);
+    uint64_t dummyOffset = memoryMappedFile->readUint64(memPosition) + dummyCount * sizeof(dummyCount);
     memPosition += 8;
 
-    uint64_t dataOffset = memoryMappedFile.readUint64(memPosition);
+    uint64_t dataOffset = memoryMappedFile->readUint64(memPosition);
 
     memPosition = namesOffset;
 
     // Get filenames for exporting
-    uint64_t nameCount = memoryMappedFile.readUint64(memPosition);
+    uint64_t nameCount = memoryMappedFile->readUint64(memPosition);
     memPosition += 8;
 
     std::vector<std::string> names;
@@ -149,16 +149,17 @@ int main(int argc, char **argv)
     for (int i = 0; i < nameCount; i++) {
         memPosition = currentPosition + i * 8;
 
-        uint64_t currentNameOffset = memoryMappedFile.readUint64(memPosition);
+        uint64_t currentNameOffset = memoryMappedFile->readUint64(memPosition);
 
         memPosition = namesOffset + nameCount * 8 + currentNameOffset + 8;
 
         do {
-            name.push_back(*(memoryMappedFile.memp + memPosition));
+            name.push_back(*(memoryMappedFile->memp + memPosition));
             memPosition++;
-        } while (*(memoryMappedFile.memp + memPosition) != '\0');
+        } while (*(memoryMappedFile->memp + memPosition) != '\0');
 
         names.emplace_back(name.data(), name.size());
+        name.clear();
     }
 
     memPosition = infoOffset;
@@ -168,22 +169,22 @@ int main(int argc, char **argv)
         memPosition += 24;
 
         // Read file info for extracting
-        uint64_t typeIdOffset = memoryMappedFile.readUint64(memPosition);
+        uint64_t typeIdOffset = memoryMappedFile->readUint64(memPosition);
         memPosition += 8;
 
-        uint64_t nameIdOffset = memoryMappedFile.readUint64(memPosition);
+        uint64_t nameIdOffset = memoryMappedFile->readUint64(memPosition);
         memPosition += 24;
 
-        uint64_t offset = memoryMappedFile.readUint64(memPosition);
+        uint64_t offset = memoryMappedFile->readUint64(memPosition);
         memPosition += 8;
 
-        uint64_t zSize = memoryMappedFile.readUint64(memPosition);
+        uint64_t zSize = memoryMappedFile->readUint64(memPosition);
         memPosition += 8;
 
-        uint64_t size = memoryMappedFile.readUint64(memPosition);
+        uint64_t size = memoryMappedFile->readUint64(memPosition);
         memPosition += 40;
 
-        uint64_t zipFlags = memoryMappedFile.readUint64(memPosition);
+        uint64_t zipFlags = memoryMappedFile->readUint64(memPosition);
         memPosition += 32;
 
         typeIdOffset = typeIdOffset * 8 + dummyOffset;
@@ -191,11 +192,11 @@ int main(int argc, char **argv)
         currentPosition = memPosition;
         memPosition = typeIdOffset;
 
-        uint64_t typeId = memoryMappedFile.readUint64(memPosition);
+        uint64_t typeId = memoryMappedFile->readUint64(memPosition);
 
         memPosition = nameIdOffset;
 
-        uint64_t nameId = memoryMappedFile.readUint64(memPosition);
+        uint64_t nameId = memoryMappedFile->readUint64(memPosition);
         memPosition += 8;
 
         auto name = names[nameId];
@@ -218,7 +219,7 @@ int main(int argc, char **argv)
             if (exportFile == nullptr)
                 throwError("Failed to open " + path + " for writing: " + strerror(errno));
 
-            fwrite(memoryMappedFile.memp + offset, 1, size, exportFile);
+            fwrite(memoryMappedFile->memp + offset, 1, size, exportFile);
             fclose(exportFile);
         }
         else {
@@ -236,7 +237,7 @@ int main(int argc, char **argv)
             if (decBytes == nullptr)
                 throwError("Failed to allocate memory for extraction.");
 
-            if (OodLZ_Decompress(memoryMappedFile.memp + offset, static_cast<int32_t>(zSize),
+            if (OodLZ_Decompress(memoryMappedFile->memp + offset, static_cast<int32_t>(zSize),
             decBytes, size, 0, 0, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, 0) != size)
                 throwError("Failed to decompress " + name + ".");
 
@@ -256,7 +257,7 @@ int main(int argc, char **argv)
         memPosition = currentPosition;
     }
 
-    memoryMappedFile.unmapFile();
+    delete memoryMappedFile;
 
     // Exit
     chrono::steady_clock::time_point end = chrono::steady_clock::now();
