@@ -1,18 +1,28 @@
 cmake_minimum_required(VERSION 3.12)
 project(EternalResourceExtractor)
 
-set(CMAKE_C_STANDARD 99)
+set(CMAKE_CXX_STANDARD 17)
 
 file(GLOB SOURCES
-        ./main.c
-        ./utils.c
-        ./utils.h
-        ./linoodle_lib.h
-        ./oo2core_dll.h
-        ./getdelim.c
+        ./main.cpp
+        ./utils.cpp
+        ./utils.hpp
+        ./linoodle.hpp
+        ./oo2core.hpp
+        ./getdelim.cpp
         )
 
-set (CMAKE_C_FLAGS "-O2 -DNDEBUG -Wno-unused-result")
+if (MSVC)
+        add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+        set(CMAKE_CXX_FLAGS "/O2 /Oi /Ot /GL /EHsc")
+else()
+        set (CMAKE_CXX_FLAGS "-Ofast -DNDEBUG -Wno-unused-result")
+endif(MSVC)
+
 add_executable(EternalResourceExtractor ${SOURCES})
+
+if(MSVC)
+        target_link_options(EternalResourceExtractor PUBLIC "/LTCG")
+endif(MSVC)
 
 target_link_libraries(EternalResourceExtractor ${CMAKE_DL_LIBS})
