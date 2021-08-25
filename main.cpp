@@ -13,9 +13,6 @@ static OodLZ_DecompressFunc *OodLZ_Decompress = nullptr;
 
 int main(int argc, char **argv)
 {
-    // Time program
-    chrono::steady_clock::time_point begin = chrono::steady_clock::now();
-
     // Disable sync with stdio
     std::ios::sync_with_stdio(false);
 
@@ -84,6 +81,9 @@ int main(int argc, char **argv)
 
     if (outPath[outPath.length() - 1] != fs::path::preferred_separator)
         outPath.push_back(fs::path::preferred_separator);
+
+    // Time program
+    chrono::steady_clock::time_point begin = chrono::steady_clock::now();
 
     // Open the resource file
     MemoryMappedFile *memoryMappedFile;
