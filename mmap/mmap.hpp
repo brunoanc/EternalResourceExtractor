@@ -30,10 +30,7 @@
 #include <sys/mman.h>
 #endif
 
-/**
- * @brief Cross platform memory mapped file class
- * 
- */
+// Cross platform memory mapped file
 class MemoryMappedFile {
 public:
     std::string filePath;
@@ -41,14 +38,10 @@ public:
     uint64_t size = 0;
 
     MemoryMappedFile(const std::string filePath);
-    MemoryMappedFile() {}
     ~MemoryMappedFile();
 
     void unmapFile();
-    bool resizeFile(const uint64_t newSize);
-    int32_t readInt32(const size_t offset);
     uint32_t readUint32(const size_t offset);
-    int64_t readInt64(const size_t offset);
     uint64_t readUint64(const size_t offset);
 private:
 #ifdef _WIN32
@@ -58,5 +51,16 @@ private:
     int fileDescriptor;
 #endif
 };
+
+// Read functions - must be in header to avoid unresolved symbol errors
+inline uint32_t MemoryMappedFile::readUint32(const size_t offset)
+{
+    return *(uint32_t*)(memp + offset);
+}
+
+inline uint64_t MemoryMappedFile::readUint64(const size_t offset)
+{
+    return *(uint64_t*)(memp + offset);
+}
 
 #endif
