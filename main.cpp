@@ -3,12 +3,18 @@
 #include <vector>
 #include <cerrno>
 #include <cstring>
+#include <chrono>
 #include "utils.hpp"
+
+namespace chrono = std::chrono;
 
 static OodLZ_DecompressFunc *OodLZ_Decompress = nullptr;
 
 int main(int argc, char **argv)
 {
+    // Time program
+    chrono::steady_clock::time_point begin = chrono::steady_clock::now();
+
     // Disable sync with stdio
     std::ios::sync_with_stdio(false);
 
@@ -292,6 +298,8 @@ int main(int argc, char **argv)
     fclose(resource);
 
     // Exit
-    std::cout << "\nDone, " << fileCount << " files extracted." << std::endl;
+    chrono::steady_clock::time_point end = chrono::steady_clock::now();
+    double totalTime = chrono::duration_cast<chrono::microseconds>(end - begin).count() / 1000000.0;
+    std::cout << "\nDone, " << fileCount << " files extracted in " << totalTime << " seconds." << std::endl;
     pressAnyKey();
 }
