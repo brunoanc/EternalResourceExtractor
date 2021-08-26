@@ -13,14 +13,14 @@ MemoryMappedFile::MemoryMappedFile(const std::string path)
 
 #ifdef _WIN32
     // Open the file
-    fileHandle = CreateFileA(filePath.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    fileHandle = CreateFileA(filePath.c_str(), GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
     if (GetLastError() != ERROR_SUCCESS || fileHandle == INVALID_HANDLE_VALUE) {
         throw std::exception();
     }
 
     // Map the file to memory
-    fileMapping = CreateFileMappingA(fileHandle, nullptr, PAGE_READWRITE, *((DWORD*)&size + 1), *(DWORD*)&size, nullptr);
+    fileMapping = CreateFileMappingA(fileHandle, nullptr, PAGE_READONLY, *((DWORD*)&size + 1), *(DWORD*)&size, nullptr);
 
     if (GetLastError() != ERROR_SUCCESS || fileMapping == nullptr) {
         CloseHandle(fileHandle);
@@ -28,7 +28,7 @@ MemoryMappedFile::MemoryMappedFile(const std::string path)
     }
 
     // Get file's memory view
-    memp = (unsigned char*)MapViewOfFile(fileMapping, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+    memp = (unsigned char*)MapViewOfFile(fileMapping, FILE_MAP_READ, 0, 0, 0);
 
     if (GetLastError() != ERROR_SUCCESS || memp == nullptr) {
         CloseHandle(fileHandle);
@@ -37,14 +37,14 @@ MemoryMappedFile::MemoryMappedFile(const std::string path)
     }
 #else
     // Open the file
-    fileDescriptor = open(filePath.c_str(), O_RDWR);
+    fileDescriptor = open(filePath.c_str(), O_RDONLY);
 
     if (fileDescriptor == -1) {
         throw std::exception();
     }
 
     // Map the file to memory
-    memp = (unsigned char*)mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fileDescriptor, 0);
+    memp = (unsigned char*)mmap(0, size, PROT_READ, MAP_PRIVATE, fileDescriptor, 0);
 
     if (memp == nullptr) {
         close(fileDescriptor);
@@ -79,3 +79,15 @@ void MemoryMappedFile::unmapFile()
     size = 0;
     memp = nullptr;
 }
+
+/*
+Old:
+1.704
+1.357
+1.616
+
+New:
+1.120
+1.236
+1.162
+*/
