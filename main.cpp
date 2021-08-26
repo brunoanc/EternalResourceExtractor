@@ -20,7 +20,7 @@ int main(int argc, char **argv)
     char buffer[8192];
     std::cout.rdbuf()->pubsetbuf(buffer, sizeof(buffer));
 
-    std::cout << "EternalResourceExtractor v1.0 by PowerBall253\n\n";
+    std::cout << "EternalResourceExtractor v2.0.0 by PowerBall253\n\n";
 
     // Print help
     if (argc > 1 && !strcmp(argv[1], "--help")) {
