@@ -200,7 +200,7 @@ int main(int argc, char **argv)
 
         // Create out directory
         auto path = fs::path(outPath + name).make_preferred();
-        fs::create_directories(path.remove_filename(), ec);
+        fs::create_directories(path.parent_path(), ec);
 
         if (ec.value() != 0)
             throwError("Failed to create path for extraction: " + ec.message());
