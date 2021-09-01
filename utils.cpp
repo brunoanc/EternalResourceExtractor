@@ -16,7 +16,7 @@
 // Check if process is running on a terminal by checking the console processes
 inline bool isRunningOnTerminal()
 {
-    DWORD buffer[sizeof(DWORD)];
+    DWORD buffer[1];
     return GetConsoleProcessList(buffer, 1) > 1;
 }
 #endif
