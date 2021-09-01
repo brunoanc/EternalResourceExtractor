@@ -82,6 +82,12 @@ int main(int argc, char **argv)
     if (outPath[outPath.length() - 1] != fs::path::preferred_separator)
         outPath.push_back(fs::path::preferred_separator);
 
+#ifdef _WIN32
+    // "\\?\" alongside the wide string functions is used to bypass PATH_MAX
+    // Check https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=cmd for details
+    outPath = "\\\\?\\" + outPath;
+#endif
+
     // Time program
     chrono::steady_clock::time_point begin = chrono::steady_clock::now();
 
@@ -106,7 +112,7 @@ int main(int argc, char **argv)
     memPosition += 4;
 
     // Create out path
-    ec = mkpath(outPath);
+    fs::create_directories(outPath, ec);
 
     if (ec.value() != 0)
         throwError("Failed to create out directory: " + ec.message());
@@ -138,8 +144,8 @@ int main(int argc, char **argv)
     std::vector<std::string> names;
     names.reserve(nameCount);
 
-    std::vector<char> name;
-    name.reserve(256);
+    std::vector<char> nameChars;
+    nameChars.reserve(256);
 
     size_t currentPosition = memPosition;
 
@@ -151,24 +157,22 @@ int main(int argc, char **argv)
         memPosition = namesOffset + nameCount * 8 + currentNameOffset + 8;
 
         do {
-            name.push_back(*(memoryMappedFile->memp + memPosition));
+            const char c = static_cast<char>(*(memoryMappedFile->memp + memPosition));
+            nameChars.push_back(c);
             memPosition++;
         } while (*(memoryMappedFile->memp + memPosition) != '\0');
 
-        names.emplace_back(name.data(), name.size());
-        name.clear();
+        names.emplace_back(nameChars.data(), nameChars.size());
+        nameChars.clear();
     }
 
     memPosition = infoOffset;
 
     // Extract files
     for (int i = 0; i < fileCount; i++) {
-        memPosition += 24;
+        memPosition += 32;
 
         // Read file info for extracting
-        uint64_t typeIdOffset = memoryMappedFile->readUint64(memPosition);
-        memPosition += 8;
-
         uint64_t nameIdOffset = memoryMappedFile->readUint64(memPosition);
         memPosition += 24;
 
@@ -184,33 +188,34 @@ int main(int argc, char **argv)
         uint64_t zipFlags = memoryMappedFile->readUint64(memPosition);
         memPosition += 32;
 
-        typeIdOffset = typeIdOffset * 8 + dummyOffset;
         nameIdOffset = (nameIdOffset + 1) * 8 + dummyOffset;
         currentPosition = memPosition;
         memPosition = nameIdOffset;
 
         uint64_t nameId = memoryMappedFile->readUint64(memPosition);
-        memPosition += 8;
-
         auto name = names[nameId];
 
         // Extract file
         std::cout << "Extracting " << name << "...\n";
 
         // Create out directory
-        std::string path = outPath + name;
-        path = fs::path(path).make_preferred().string();
-        ec = mkpath(path);
+        auto path = fs::path(outPath + name).make_preferred();
+        fs::create_directories(path.remove_filename(), ec);
 
         if (ec.value() != 0)
             throwError("Failed to create path for extraction: " + ec.message());
 
         if (size == zSize) {
             // File is decompressed, extract as-is
-            FILE *exportFile = openFile(path, "wb");
+
+#ifdef _WIN32
+            FILE *exportFile = _wfopen(path.c_str(), L"wb");
+#else
+            FILE *exportFile = fopen(path.c_str(), "wb");
+#endif
 
             if (exportFile == nullptr)
-                throwError("Failed to open " + path + " for writing: " + strerror(errno));
+                throwError("Failed to open " + path.string() + " for writing: " + strerror(errno));
 
             fwrite(memoryMappedFile->memp + offset, 1, size, exportFile);
             fclose(exportFile);
@@ -235,10 +240,15 @@ int main(int argc, char **argv)
                 throwError("Failed to decompress " + name + ".");
 
             // Write file to disk
-            FILE *exportFile = openFile(path, "wb");
+
+#ifdef _WIN32
+            FILE *exportFile = _wfopen(path.c_str(), L"wb");
+#else
+            FILE *exportFile = fopen(path.c_str(), "wb");
+#endif
 
             if (exportFile == nullptr)
-                throwError("Failed to open " + path + " for writing: " + strerror(errno));
+                throwError("Failed to open " + path.string() + " for writing: " + strerror(errno));
 
             fwrite(decBytes, 1, size, exportFile);
             fclose(exportFile);
@@ -254,7 +264,8 @@ int main(int argc, char **argv)
 
     // Exit
     chrono::steady_clock::time_point end = chrono::steady_clock::now();
-    double totalTime = chrono::duration_cast<chrono::microseconds>(end - begin).count() / 1000000.0;
-    std::cout << "\nDone, " << fileCount << " files extracted in " << totalTime << " seconds." << std::endl;
+    double totalTime = static_cast<double>(chrono::duration_cast<chrono::microseconds>(end - begin).count());
+    double totalTimeSeconds = totalTime / 1000000;
+    std::cout << "\nDone, " << fileCount << " files extracted in " << totalTimeSeconds << " seconds." << std::endl;
     pressAnyKey();
 }

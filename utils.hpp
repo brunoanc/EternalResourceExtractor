@@ -12,9 +12,7 @@ typedef int32_t OodLZ_DecompressFunc(uint8_t *src_buf, int32_t src_len, uint8_t 
 
 void pressAnyKey();
 void throwError(const std::string& error);
-std::error_code mkpath(fs::path path);
 std::string formatPath(std::string path);
-FILE *openFile(const fs::path &path, const char *mode);
 bool oodleInit(OodLZ_DecompressFunc **OodLZ_Decompress);
 
 #endif

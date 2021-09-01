@@ -13,12 +13,8 @@
 #endif
 
 #ifdef _WIN32
-// "\\?\" alongside the wide string functions is used to bypass PATH_MAX
-// Check https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=cmd for details 
-#define PATH_MAX_DISABLER L"\\\\?\\"
-
 // Check if process is running on a terminal by checking the console processes
-static bool isRunningOnTerminal()
+inline bool isRunningOnTerminal()
 {
     DWORD buffer[sizeof(DWORD)];
     return GetConsoleProcessList(buffer, 1) > 1;
@@ -46,20 +42,6 @@ void throwError(const std::string& error)
     exit(1);
 }
 
-// Recursive mkdir
-std::error_code mkpath(fs::path path)
-{
-    path = path.remove_filename();
-    std::error_code ec;
-#ifdef _WIN32
-    fs::create_directories(PATH_MAX_DISABLER + path.wstring(), ec);
-#else
-    fs::create_directories(path, ec);
-#endif
-
-    return ec;
-}
-
 // Format path by removing whitespace and double quotes
 std::string formatPath(std::string path)
 {
@@ -67,21 +49,6 @@ std::string formatPath(std::string path)
     path.erase(path.find_last_not_of(" \t\n\r\f\v\"") + 1);
     path.erase(0, path.find_first_not_of(" \t\n\r\f\v\""));
     return path;
-}
-
-// Cross-platform fopen
-FILE *openFile(const fs::path &path, const char *mode)
-{
-#ifdef _WIN32
-    std::wstring wideMode;
-
-    for (size_t i = 0; i < strlen(mode); i++)
-        wideMode.push_back((wchar_t)mode[i]);
-
-    return _wfopen((PATH_MAX_DISABLER + path.wstring()).c_str(), wideMode.c_str());
-#else
-    return fopen(path.c_str(), mode);
-#endif
 }
 
 // Load oodle dll
