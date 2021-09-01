@@ -23,7 +23,7 @@ int main(int argc, char **argv)
     std::cout << "EternalResourceExtractor v2.0.0 by PowerBall253\n\n";
 
     // Print help
-    if (argc > 1 && !strcmp(argv[1], "--help")) {
+    if (argc > 1 && strcmp(argv[1], "--help") == 0) {
         std::cout << "Usage:\n";
         std::cout << "%s [path to .resources file] [out path]\n";
         std::cout.flush();
