@@ -106,7 +106,7 @@ int main(int argc, char **argv)
         throwError("Failed to init oodle for decompressing.");
 
     // Look for IDCL magic
-    if (std::memcmp(memoryMappedFile->memp, "IDCL", 4) != 0)
+    if (memcmp(memoryMappedFile->memp, "IDCL", 4) != 0)
         throwError(fs::path(resourcePath).filename().string() + " is not a valid .resources file.");
 
     memPosition += 4;
@@ -266,6 +266,7 @@ int main(int argc, char **argv)
     chrono::steady_clock::time_point end = chrono::steady_clock::now();
     double totalTime = static_cast<double>(chrono::duration_cast<chrono::microseconds>(end - begin).count());
     double totalTimeSeconds = totalTime / 1000000;
+
     std::cout << "\nDone, " << fileCount << " files extracted in " << totalTimeSeconds << " seconds." << std::endl;
     pressAnyKey();
 }
