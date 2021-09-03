@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <vector>
 #include "utils.hpp"
 #include "oo2core.hpp"
 
@@ -94,4 +95,22 @@ bool oodleInit(OodLZ_DecompressFunc **OodLZ_Decompress)
         return false;
 
     return true;
+}
+
+// Split the given string using the given delimiter
+std::vector<std::string> splitString(std::string stringToSplit, const char delimiter)
+{
+    std::vector<std::string> resultVector;
+    size_t pos;
+    std::string part;
+
+    while ((pos = stringToSplit.find(delimiter)) != std::string::npos) {
+        part = stringToSplit.substr(0, pos);
+        resultVector.push_back(part);
+        stringToSplit.erase(0, pos + 1);
+    }
+
+    resultVector.push_back(stringToSplit);
+
+    return resultVector;
 }

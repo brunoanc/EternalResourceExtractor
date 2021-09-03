@@ -14,5 +14,6 @@ void pressAnyKey();
 void throwError(const std::string& error);
 std::string formatPath(std::string path);
 bool oodleInit(OodLZ_DecompressFunc **OodLZ_Decompress);
+std::vector<std::string> splitString(std::string stringToSplit, const char delimiter);
 
 #endif

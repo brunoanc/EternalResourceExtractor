@@ -11,6 +11,7 @@ file(GLOB SOURCES
         ./oo2core.hpp
         ./mmap/mmap.cpp
         ./mmap/mmap.hpp
+        ./argh/argh.hpp
         )
 
 if (MSVC)

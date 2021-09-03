@@ -4,8 +4,10 @@
 #include <cerrno>
 #include <cstring>
 #include <chrono>
+#include <regex>
 #include "utils.hpp"
 #include "mmap/mmap.hpp"
+#include "argh/argh.h"
 
 namespace chrono = std::chrono;
 
@@ -20,22 +22,89 @@ int main(int argc, char **argv)
     char buffer[8192];
     std::cout.rdbuf()->pubsetbuf(buffer, sizeof(buffer));
 
-    std::cout << "EternalResourceExtractor v2.0.0 by PowerBall253\n\n";
+    std::cout << "EternalResourceExtractor v2.1.0 by PowerBall253\n\n";
 
-    // Print help
-    if (argc > 1 && strcmp(argv[1], "--help") == 0) {
+    // Parse arguments
+    argh::parser cmdl;
+    cmdl.add_params({"-f", "--filter", "-r", "--regex"});
+    cmdl.parse(argc, argv);
+
+    if (cmdl[{"-h", "--help"}]) {
+        std::cout << cmdl({"-f", "--filter"}).str() << std::endl;
         std::cout << "Usage:\n";
-        std::cout << "%s [path to .resources file] [out path]\n";
+        std::cout << argv[0] << " [path to .resources file] [out path] [options]\n\n";
+        std::cout << "Options:\n";
+        std::cout << "-h, --help\tDisplay this help and exit\n";
+        std::cout << "-f, --filter\tIndicate a pattern the filename must match to be extracted, "
+            << " using '*' for matching various characters and '?' to match exactly one.\n";
+        std::cout << "\t\tYou can also prepend a '!' at the beginning of a filter to indicate it must not be matched,"
+            << " and separate various filters with a ';'.\n";
+        std::cout << "-r, --regex\tSimilar to -f, but allows full ECMAScript-style regular expressions to be passed.\n";
         std::cout.flush();
         return 1;
     }
 
+    // Get regexes to match/not match
+    std::vector<std::regex> regexesToMatch;
+    std::vector<std::regex> regexesNotToMatch;
+    const std::string charsToEscape = "\\^$*+?.()|{}[]";
+
+    for (const auto& param : cmdl.params()) {
+        if (param.first == "r" || param.first == "regex") {
+            for (const auto& regex : splitString(param.second, ';')) {
+                try {
+                    if (regex[0] == '!')
+                        regexesNotToMatch.emplace_back(regex.substr(1), std::regex_constants::ECMAScript | std::regex_constants::optimize);
+                    else
+                        regexesToMatch.emplace_back(regex, std::regex_constants::ECMAScript | std::regex_constants::optimize);
+                    }
+                catch (std::exception& ex) {
+                    throwError("Failed to parse " + regex + " regular expression: " + ex.what());
+                }
+            }
+        }
+        else if (param.first == "f" || param.first == "filter") {
+            for (const auto& filter : splitString(param.second, ';')) {
+                std::string regex;
+
+                for (int i = 0; i < filter.size(); i++) {
+                    switch (filter[i]) {
+                        case '?':
+                            regex.push_back('.');
+                            break;
+                        case '*':
+                            regex += ".*";
+                            break;
+                        default:
+                            if (charsToEscape.find(filter[i]) != std::string::npos)
+                                regex += std::string("\\") + filter[i];
+                            else
+                                regex.push_back(filter[i]);
+
+                            break;
+                    }
+                }
+
+                try {
+                    if (regex[0] == '!')
+                        regexesNotToMatch.emplace_back(regex.substr(1), std::regex_constants::ECMAScript | std::regex_constants::optimize);
+                    else
+                        regexesToMatch.emplace_back(regex, std::regex_constants::ECMAScript | std::regex_constants::optimize);
+                }
+                catch (std::exception& ex) {
+                    throwError("Failed to parse " + filter + " filter: " + ex.what());
+                }
+            }
+        }
+    }
+
     // Get resource & out path
+    std::vector<std::string> args = cmdl.pos_args();
     std::string resourcePath;
     std::string outPath;
     std::error_code ec;
 
-    switch (argc) {
+    switch (args.size()) {
         case 1:
             std::cout << "Input the path to the .resources file: ";
             std::cout.flush();
@@ -48,7 +117,7 @@ int main(int argc, char **argv)
             std::cout << '\n';
             break;
         case 2:
-            resourcePath = std::string(argv[1]);
+            resourcePath = args[1];
 
             std::cout << "Input the path to the out directory: ";
             std::cout.flush();
@@ -57,8 +126,8 @@ int main(int argc, char **argv)
             std::cout << '\n';
             break;
         default:
-            resourcePath = std::string(argv[1]);
-            outPath = std::string(argv[2]);
+            resourcePath = args[1];
+            outPath = args[2];
             break;
     }
 
@@ -193,7 +262,19 @@ int main(int argc, char **argv)
         memPosition = nameIdOffset;
 
         uint64_t nameId = memoryMappedFile->readUint64(memPosition);
-        auto name = names[nameId];
+        std::string name = names[nameId];
+        std::string fileName = fs::path(name).filename().string();
+
+        // Match filename with regexes
+        for (const auto& regex : regexesToMatch) {
+            if (!std::regex_match(fileName, regex))
+                continue;
+        }
+
+        for (const auto& regex : regexesNotToMatch) {
+            if (std::regex_match(fileName, regex))
+                continue;
+        }
 
         // Extract file
         std::cout << "Extracting " << name << "...\n";
