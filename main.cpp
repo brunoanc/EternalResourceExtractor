@@ -237,6 +237,8 @@ int main(int argc, char **argv)
     memPosition = infoOffset;
 
     // Extract files
+    size_t filesExtracted = 0;
+
     for (int i = 0; i < fileCount; i++) {
         memPosition += 32;
 
@@ -265,14 +267,30 @@ int main(int argc, char **argv)
         std::string fileName = fs::path(name).filename().string();
 
         // Match filename with regexes
+        bool extract = true;
+
         for (const auto& regex : regexesToMatch) {
-            if (!std::regex_match(fileName, regex))
-                continue;
+            if (!std::regex_match(fileName, regex)) {
+                extract = false;
+                break;
+            }
+        }
+
+        if (!extract) {
+            memPosition = currentPosition;
+            continue;
         }
 
         for (const auto& regex : regexesNotToMatch) {
-            if (std::regex_match(fileName, regex))
-                continue;
+            if (std::regex_match(fileName, regex)) {
+                extract = false;
+                break;
+            }
+        }
+
+        if (!extract) {
+            memPosition = currentPosition;
+            continue;
         }
 
         // Extract file
@@ -336,6 +354,8 @@ int main(int argc, char **argv)
             delete[] decBytes;
         }
 
+        filesExtracted++;
+
         // Seek back to info section
         memPosition = currentPosition;
     }
@@ -347,6 +367,6 @@ int main(int argc, char **argv)
     double totalTime = static_cast<double>(chrono::duration_cast<chrono::microseconds>(end - begin).count());
     double totalTimeSeconds = totalTime / 1000000;
 
-    std::cout << "\nDone, " << fileCount << " files extracted in " << totalTimeSeconds << " seconds." << std::endl;
+    std::cout << "\nDone, " << filesExtracted << " files extracted in " << totalTimeSeconds << " seconds." << std::endl;
     pressAnyKey();
 }
