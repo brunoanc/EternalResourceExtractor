@@ -67,8 +67,8 @@ int main(int argc, char **argv)
             for (const auto& filter : splitString(param.second, ';')) {
                 std::string regex;
 
-                for (int i = 0; i < filter.size(); i++) {
-                    switch (filter[i]) {
+                for (const auto& c : filter) {
+                    switch (c) {
                         case '?':
                             regex.push_back('.');
                             break;
@@ -76,11 +76,10 @@ int main(int argc, char **argv)
                             regex += ".*";
                             break;
                         default:
-                            if (charsToEscape.find(filter[i]) != std::string::npos)
-                                regex += std::string("\\") + filter[i];
-                            else
-                                regex.push_back(filter[i]);
+                            if (charsToEscape.find(c) != std::string::npos)
+                                regex.push_back('\\');
 
+                            regex.push_back(c);
                             break;
                     }
                 }
