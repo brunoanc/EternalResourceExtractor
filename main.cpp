@@ -32,14 +32,14 @@ int main(int argc, char **argv)
     if (cmdl[{"-h", "--help"}]) {
         std::cout << cmdl({"-f", "--filter"}).str() << std::endl;
         std::cout << "Usage:\n";
-        std::cout << argv[0] << " [path to .resources file] [out path] [options]\n\n";
-        std::cout << "Options:\n";
-        std::cout << "-h, --help\tDisplay this help and exit\n";
-        std::cout << "-f, --filter\tIndicate a pattern the filename must match to be extracted, "
+        std::cout << "EternalResourceExtractor [path to .resources file] [out path] [options]\n\n";
+        std::cout << "Options:\n\n";
+        std::cout << "-h, --help\t\tDisplay this help message and exit\n\n";
+        std::cout << "-f, --filter=FILTERS\tIndicate a pattern the filename must match to be extracted, "
             << " using '*' for matching various characters and '?' to match exactly one.\n";
-        std::cout << "\t\tYou can also prepend a '!' at the beginning of a filter to indicate it must not be matched,"
-            << " and separate various filters with a ';'.\n";
-        std::cout << "-r, --regex\tSimilar to -f, but allows full ECMAScript-style regular expressions to be passed.\n";
+        std::cout << "\t\t\tYou can also prepend a '!' at the beginning of a filter to indicate it must not be matched,"
+            << " and separate various filters with a ';'.\n\n";
+        std::cout << "-r, --regex=REGEXES\tSimilar to -f, but allows full ECMAScript-style regular expressions to be passed.\n\n";
         std::cout.flush();
         return 1;
     }
