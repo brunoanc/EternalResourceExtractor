@@ -52,12 +52,13 @@ int main(int argc, char **argv)
     for (const auto& param : cmdl.params()) {
         if (param.first == "r" || param.first == "regex") {
             for (const auto& regex : splitString(param.second, ';')) {
+                // Push regex to vector
                 try {
                     if (regex[0] == '!')
                         regexesNotToMatch.emplace_back(regex.substr(1), std::regex_constants::ECMAScript | std::regex_constants::optimize);
                     else
                         regexesToMatch.emplace_back(regex, std::regex_constants::ECMAScript | std::regex_constants::optimize);
-                    }
+                }
                 catch (std::exception& ex) {
                     throwError("Failed to parse " + regex + " regular expression: " + ex.what());
                 }
@@ -65,6 +66,7 @@ int main(int argc, char **argv)
         }
         else if (param.first == "f" || param.first == "filter") {
             for (const auto& filter : splitString(param.second, ';')) {
+                // Convert filter into valid regex
                 std::string regex;
 
                 for (const auto& c : filter) {
@@ -84,6 +86,7 @@ int main(int argc, char **argv)
                     }
                 }
 
+                // Push regex to vector
                 try {
                     if (regex[0] == '!')
                         regexesNotToMatch.emplace_back(regex.substr(1), std::regex_constants::ECMAScript | std::regex_constants::optimize);
