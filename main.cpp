@@ -267,13 +267,12 @@ int main(int argc, char **argv)
 
         uint64_t nameId = memoryMappedFile->readUint64(memPosition);
         std::string name = names[nameId];
-        std::string fileName = fs::path(name).filename().string();
 
         // Match filename with regexes
         bool extract = true;
 
         for (const auto& regex : regexesToMatch) {
-            if (!std::regex_match(fileName, regex)) {
+            if (!std::regex_match(name, regex)) {
                 extract = false;
                 break;
             }
@@ -285,7 +284,7 @@ int main(int argc, char **argv)
         }
 
         for (const auto& regex : regexesNotToMatch) {
-            if (std::regex_match(fileName, regex)) {
+            if (std::regex_match(name, regex)) {
                 extract = false;
                 break;
             }
