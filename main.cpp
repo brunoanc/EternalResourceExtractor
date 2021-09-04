@@ -269,11 +269,11 @@ int main(int argc, char **argv)
         std::string name = names[nameId];
 
         // Match filename with regexes
-        bool extract = true;
+        bool extract = regexesToMatch.empty();
 
         for (const auto& regex : regexesToMatch) {
-            if (!std::regex_match(name, regex)) {
-                extract = false;
+            if (std::regex_match(name, regex)) {
+                extract = true;
                 break;
             }
         }
