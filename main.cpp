@@ -22,7 +22,7 @@ int main(int argc, char **argv)
     char buffer[8192];
     std::cout.rdbuf()->pubsetbuf(buffer, sizeof(buffer));
 
-    std::cout << "EternalResourceExtractor v2.1.0 by PowerBall253\n\n";
+    std::cout << "EternalResourceExtractor v3.0.0 by PowerBall253\n\n";
 
     // Parse arguments
     argh::parser cmdl;
@@ -35,6 +35,7 @@ int main(int argc, char **argv)
         std::cout << "EternalResourceExtractor [path to .resources file] [out path] [options]\n\n";
         std::cout << "Options:\n\n";
         std::cout << "-h, --help\t\tDisplay this help message and exit\n\n";
+        std::cout << "-q, --quiet\t\tSilences output during the extraction process.\n\n";
         std::cout << "-f, --filter=FILTERS\tIndicate a pattern the filename must match to be extracted, "
             << " using '*' for matching various characters and '?' to match exactly one.\n";
         std::cout << "\t\t\tYou can also prepend a '!' at the beginning of a filter to indicate it must not be matched,"
@@ -43,6 +44,9 @@ int main(int argc, char **argv)
         std::cout.flush();
         return 1;
     }
+
+    if (cmdl[{"-q", "--quiet"}])
+        std::cout.setstate(std::ios::failbit); // Makes cout not output anything
 
     // Get regexes to match/not match
     std::vector<std::regex> regexesToMatch;
@@ -369,6 +373,7 @@ int main(int argc, char **argv)
     double totalTime = static_cast<double>(chrono::duration_cast<chrono::microseconds>(end - begin).count());
     double totalTimeSeconds = totalTime / 1000000;
 
+    std::cout.clear();
     std::cout << "\nDone, " << filesExtracted << " files extracted in " << totalTimeSeconds << " seconds." << std::endl;
     pressAnyKey();
 }
