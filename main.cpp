@@ -79,7 +79,7 @@ int main(int argc, char **argv)
                             break;
                         default:
                             if (charsToEscape.find(c) != std::string::npos)
-                                regex.push_back('\\');
+                                regex.push_back('\\'); // Escape character with backslash
 
                             regex.push_back(c);
                             break;
