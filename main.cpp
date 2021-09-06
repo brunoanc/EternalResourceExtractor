@@ -8,10 +8,9 @@
 #include "utils.hpp"
 #include "mmap/mmap.hpp"
 #include "argh/argh.h"
+#include "oodle/oodle2.h"
 
 namespace chrono = std::chrono;
-
-static OodLZ_DecompressFunc *OodLZ_Decompress = nullptr;
 
 int main(int argc, char **argv)
 {
@@ -177,9 +176,6 @@ int main(int argc, char **argv)
         throwError("Failed to open " + resourcePath + " for reading.");
     }
 
-    if (!oodleInit(&OodLZ_Decompress))
-        throwError("Failed to init oodle for decompressing.");
-
     // Look for IDCL magic
     if (memcmp(memoryMappedFile->memp, "IDCL", 4) != 0)
         throwError(fs::path(resourcePath).filename().string() + " is not a valid .resources file.");
@@ -339,8 +335,8 @@ int main(int argc, char **argv)
             if (decBytes == nullptr)
                 throwError("Failed to allocate memory for extraction.");
 
-            if (OodLZ_Decompress(memoryMappedFile->memp + offset, static_cast<int32_t>(zSize),
-            decBytes, size, 0, 0, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, 0) != size)
+            if (OodleLZ_Decompress(memoryMappedFile->memp + offset, static_cast<int32_t>(zSize),
+            decBytes, size) != size)
                 throwError("Failed to decompress " + name + ".");
 
             // Write file to disk
