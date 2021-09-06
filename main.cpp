@@ -36,11 +36,11 @@ int main(int argc, char **argv)
         std::cout << "Options:\n\n";
         std::cout << "-h, --help\t\tDisplay this help message and exit\n\n";
         std::cout << "-q, --quiet\t\tSilences output during the extraction process.\n\n";
-        std::cout << "-f, --filter=FILTERS\tIndicate a pattern the filename must match to be extracted, "
-            << " using '*' for matching various characters and '?' to match exactly one.\n";
-        std::cout << "\t\t\tYou can also prepend a '!' at the beginning of a filter to indicate it must not be matched,"
-            << " and separate various filters with a ';'.\n\n";
-        std::cout << "-r, --regex=REGEXES\tSimilar to -f, but allows full ECMAScript-style regular expressions to be passed.\n\n";
+        std::cout << "-f, --filter=FILTERS\tIndicate a pattern the filename must match to be extracted, using\n"
+            << "\t\t\t'*' for matching various characters and '?' to match exactly one.\n";
+        std::cout << "\t\t\tYou can also prepend a '!' at the beginning of a filter to indicate it\n"
+        << "\t\t\tmust not be matched, and separate various filters with a ';'.\n\n";
+        std::cout << "-r, --regex=REGEXES\tSimilar to -f, but allows full regular expressions to be passed.\n\n";
         std::cout.flush();
         return 1;
     }
