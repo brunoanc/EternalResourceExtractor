@@ -20,6 +20,7 @@ EternalResourceExtractor.exe [path to .resources file] [out path] [options]
 The supported options are:
 
 * `-h`, `--help`: Displays the help message and exits.
+* `-q`, `--quiet`: Silences output during the extraction process.
 * `-f`, `--filter=FILTERS`: Indicate a pattern the filename must match to be extracted,  using `*` for matching various characters and `?` to match exactly one. You can also prepend a `!` at the beginning of a filter to indicate it must not be matched, and separate various filters with a `;`.
 * `-r`, `--regex=REGEXES`: Similar to `-f`, but allows full ECMAScript-style regular expressions to be passed.
 
