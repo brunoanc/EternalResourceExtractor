@@ -7,8 +7,8 @@ Small C++ utility to extract files from a DOOM Eternal .resources file.
 * Supports launching from command line with arguments, double clicking on it, and dragging and dropping.
 * ~2-3x faster than QuickBMS on extracting files.
 * Standalone, does not require any additional files.
-* Light, only occupies 1 MB.
-* Supports both Windows and Linux.
+* Lighter than QuickBMS and other extraction tools.
+* Supports Windows, Linux and macOS.
 
 ## Usage
 The syntax for the CMD is:
@@ -38,17 +38,15 @@ git clone https://github.com/PowerBall253/EternalResourceExtractor.git
 Then, generate the makefile by running:
 ```
 cd EternalResourceExtractor
-mkdir build
-cd build
-cmake .. # Append "-G 'MSYS Makefiles'" on MSYS
+cmake -B "build" # Append "-G 'MSYS Makefiles'" on MSYS
 ```
 
 Finally, build with:
 ```
-cmake --build . --config Release
+cmake --build "build" --config Release
 ```
 
-The EternalResourceExtractor executable will be in the "build" folder in Linux/MinGW and in the "build/Release" folder in MSVC.
+The EternalResourceExtractor executable will be in the `build` folder in Linux/MinGW/macOS and in the `build\Release` folder in MSVC.
 
 ## Credits
 * aluigi: For the QuickBMS resource extractor script for The New Colossus.
