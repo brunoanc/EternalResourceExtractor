@@ -1,5 +1,5 @@
-#ifndef OODLE_H
-#define OODLE_H
+#ifndef OODLE_HPP
+#define OODLE_HPP
 
 #ifdef _WIN32
 // Use __stdcall linkage on Windows
