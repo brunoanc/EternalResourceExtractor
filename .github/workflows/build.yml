@@ -25,6 +25,7 @@ jobs:
         with:
           repository: PowerBall253/lib
           token: ${{secrets.ACCESS_TOKEN}}
+          path: lib
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
@@ -62,6 +63,7 @@ jobs:
         with:
           repository: PowerBall253/lib
           token: ${{secrets.ACCESS_TOKEN}}
+          path: lib
 
       - name: cd to workspace
         run: cd ${{github.workspace}}
@@ -99,6 +101,7 @@ jobs:
         with:
           repository: PowerBall253/lib
           token: ${{secrets.ACCESS_TOKEN}}
+          path: lib
 
       - name: cd to workspace
         run: cd ${{github.workspace}}
