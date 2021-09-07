@@ -1,6 +1,8 @@
 #ifndef OODLE_HPP
 #define OODLE_HPP
 
+#include <iostream>
+
 #ifdef _WIN32
 // Use __stdcall linkage on Windows
 #define LINKAGE __stdcall
