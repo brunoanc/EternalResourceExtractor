@@ -4,12 +4,13 @@
 #include <cerrno>
 #include <cstring>
 #include <chrono>
+#include <regex>
 #include "utils.hpp"
 #include "mmap/mmap.hpp"
+#include "argh/argh.h"
+#include "oodle/oodle2.h"
 
 namespace chrono = std::chrono;
-
-static OodLZ_DecompressFunc *OodLZ_Decompress = nullptr;
 
 int main(int argc, char **argv)
 {
@@ -20,22 +21,95 @@ int main(int argc, char **argv)
     char buffer[8192];
     std::cout.rdbuf()->pubsetbuf(buffer, sizeof(buffer));
 
-    std::cout << "EternalResourceExtractor v2.0.0 by PowerBall253\n\n";
+    std::cout << "EternalResourceExtractor v3.0.0 by PowerBall253\n\n";
 
-    // Print help
-    if (argc > 1 && strcmp(argv[1], "--help") == 0) {
+    // Parse arguments
+    argh::parser cmdl;
+    cmdl.add_params({"-f", "--filter", "-r", "--regex"});
+    cmdl.parse(argc, argv);
+
+    if (cmdl[{"-h", "--help"}]) {
+        std::cout << cmdl({"-f", "--filter"}).str() << std::endl;
         std::cout << "Usage:\n";
-        std::cout << "%s [path to .resources file] [out path]\n";
+        std::cout << "EternalResourceExtractor [path to .resources file] [out path] [options]\n\n";
+        std::cout << "Options:\n\n";
+        std::cout << "-h, --help\t\tDisplay this help message and exit\n\n";
+        std::cout << "-q, --quiet\t\tSilences output during the extraction process.\n\n";
+        std::cout << "-f, --filter=FILTERS\tIndicate a pattern the filename must match to be extracted, using\n"
+            << "\t\t\t'*' for matching various characters and '?' to match exactly one.\n";
+        std::cout << "\t\t\tYou can also prepend a '!' at the beginning of a filter to indicate it\n"
+        << "\t\t\tmust not be matched, and separate various filters with a ';'.\n\n";
+        std::cout << "-r, --regex=REGEXES\tSimilar to -f, but allows full regular expressions to be passed.\n\n";
         std::cout.flush();
         return 1;
     }
 
+    if (cmdl[{"-q", "--quiet"}])
+        std::cout.setstate(std::ios::failbit); // Makes cout not output anything
+
+    // Get regexes to match/not match
+    std::vector<std::regex> regexesToMatch;
+    std::vector<std::regex> regexesNotToMatch;
+    const std::string charsToEscape = "\\^$*+?.()|{}[]";
+
+    for (const auto& param : cmdl.params()) {
+        if (param.first == "r" || param.first == "regex") {
+            for (const auto& regex : splitString(param.second, ';')) {
+                // Push regex to vector
+                try {
+                    if (regex[0] == '!')
+                        regexesNotToMatch.emplace_back(regex.substr(1), std::regex_constants::ECMAScript | std::regex_constants::optimize);
+                    else
+                        regexesToMatch.emplace_back(regex, std::regex_constants::ECMAScript | std::regex_constants::optimize);
+                }
+                catch (std::exception& ex) {
+                    throwError("Failed to parse " + regex + " regular expression: " + ex.what());
+                }
+            }
+        }
+        else if (param.first == "f" || param.first == "filter") {
+            for (const auto& filter : splitString(param.second, ';')) {
+                // Convert filter into valid regex
+                std::string regex;
+
+                for (const auto& c : filter) {
+                    switch (c) {
+                        case '?':
+                            regex.push_back('.');
+                            break;
+                        case '*':
+                            regex += ".*";
+                            break;
+                        default:
+                            if (charsToEscape.find(c) != std::string::npos)
+                                regex.push_back('\\'); // Escape character with backslash
+
+                            regex.push_back(c);
+                            break;
+                    }
+                }
+
+                // Push regex to vector
+                try {
+                    if (regex[0] == '!')
+                        regexesNotToMatch.emplace_back(regex.substr(1), std::regex_constants::ECMAScript | std::regex_constants::optimize);
+                    else
+                        regexesToMatch.emplace_back(regex, std::regex_constants::ECMAScript | std::regex_constants::optimize);
+                }
+                catch (std::exception& ex) {
+                    throwError("Failed to parse " + filter + " filter: " + ex.what());
+                }
+            }
+        }
+    }
+
     // Get resource & out path
+    std::vector<std::string> args = cmdl.pos_args();
     std::string resourcePath;
     std::string outPath;
     std::error_code ec;
 
-    switch (argc) {
+    switch (args.size()) {
         case 1:
             std::cout << "Input the path to the .resources file: ";
             std::cout.flush();
@@ -48,7 +122,7 @@ int main(int argc, char **argv)
             std::cout << '\n';
             break;
         case 2:
-            resourcePath = std::string(argv[1]);
+            resourcePath = args[1];
 
             std::cout << "Input the path to the out directory: ";
             std::cout.flush();
@@ -57,8 +131,8 @@ int main(int argc, char **argv)
             std::cout << '\n';
             break;
         default:
-            resourcePath = std::string(argv[1]);
-            outPath = std::string(argv[2]);
+            resourcePath = args[1];
+            outPath = args[2];
             break;
     }
 
@@ -101,9 +175,6 @@ int main(int argc, char **argv)
     catch (std::exception &e) {
         throwError("Failed to open " + resourcePath + " for reading.");
     }
-
-    if (!oodleInit(&OodLZ_Decompress))
-        throwError("Failed to init oodle for decompressing.");
 
     // Look for IDCL magic
     if (memcmp(memoryMappedFile->memp, "IDCL", 4) != 0)
@@ -169,6 +240,8 @@ int main(int argc, char **argv)
     memPosition = infoOffset;
 
     // Extract files
+    size_t filesExtracted = 0;
+
     for (int i = 0; i < fileCount; i++) {
         memPosition += 32;
 
@@ -193,7 +266,34 @@ int main(int argc, char **argv)
         memPosition = nameIdOffset;
 
         uint64_t nameId = memoryMappedFile->readUint64(memPosition);
-        auto name = names[nameId];
+        std::string name = names[nameId];
+
+        // Match filename with regexes
+        bool extract = regexesToMatch.empty();
+
+        for (const auto& regex : regexesToMatch) {
+            if (std::regex_match(name, regex)) {
+                extract = true;
+                break;
+            }
+        }
+
+        if (!extract) {
+            memPosition = currentPosition;
+            continue;
+        }
+
+        for (const auto& regex : regexesNotToMatch) {
+            if (std::regex_match(name, regex)) {
+                extract = false;
+                break;
+            }
+        }
+
+        if (!extract) {
+            memPosition = currentPosition;
+            continue;
+        }
 
         // Extract file
         std::cout << "Extracting " << name << "...\n";
@@ -235,8 +335,8 @@ int main(int argc, char **argv)
             if (decBytes == nullptr)
                 throwError("Failed to allocate memory for extraction.");
 
-            if (OodLZ_Decompress(memoryMappedFile->memp + offset, static_cast<int32_t>(zSize),
-            decBytes, size, 0, 0, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, 0) != size)
+            if (OodleLZ_Decompress(memoryMappedFile->memp + offset, static_cast<int32_t>(zSize),
+            decBytes, size) != size)
                 throwError("Failed to decompress " + name + ".");
 
             // Write file to disk
@@ -256,6 +356,8 @@ int main(int argc, char **argv)
             delete[] decBytes;
         }
 
+        filesExtracted++;
+
         // Seek back to info section
         memPosition = currentPosition;
     }
@@ -267,6 +369,7 @@ int main(int argc, char **argv)
     double totalTime = static_cast<double>(chrono::duration_cast<chrono::microseconds>(end - begin).count());
     double totalTimeSeconds = totalTime / 1000000;
 
-    std::cout << "\nDone, " << fileCount << " files extracted in " << totalTimeSeconds << " seconds." << std::endl;
+    std::cout.clear();
+    std::cout << "\nDone, " << filesExtracted << " files extracted in " << totalTimeSeconds << " seconds." << std::endl;
     pressAnyKey();
 }

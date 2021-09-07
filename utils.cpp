@@ -1,15 +1,12 @@
 #include <iostream>
 #include <string>
+#include <vector>
 #include "utils.hpp"
-#include "oo2core.hpp"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <conio.h>
-#else
-#include <dlfcn.h>
-#include "linoodle.hpp"
 #endif
 
 #ifdef _WIN32
@@ -51,47 +48,20 @@ std::string formatPath(std::string path)
     return path;
 }
 
-// Load oodle dll
-bool oodleInit(OodLZ_DecompressFunc **OodLZ_Decompress)
+// Split the given string using the given delimiter
+std::vector<std::string> splitString(std::string stringToSplit, const char delimiter)
 {
-    if (OodLZ_Decompress == nullptr)
-        return false;
+    std::vector<std::string> resultVector;
+    size_t pos;
+    std::string part;
 
-    // If oodle is not found, write it
-    if (!fs::exists("oo2core_8_win64.dll")) {
-        FILE *oo2core = fopen("oo2core_8_win64.dll", "wb");
-
-        if (oo2core == nullptr)
-            return false;
-
-        fwrite(oo2coreDll, 1, sizeof(oo2coreDll), oo2core);
-        fclose(oo2core);
+    while ((pos = stringToSplit.find(delimiter)) != std::string::npos) {
+        part = stringToSplit.substr(0, pos);
+        resultVector.push_back(part);
+        stringToSplit.erase(0, pos + 1);
     }
 
-#ifdef _WIN32
-    // Load OodleLZ_Decompress from oodle
-    auto oodle = LoadLibraryA("./oo2core_8_win64.dll");
-    *OodLZ_Decompress = reinterpret_cast<OodLZ_DecompressFunc*>(GetProcAddress(oodle, "OodleLZ_Decompress"));
-#else
+    resultVector.push_back(stringToSplit);
 
-    // If linoodle is not found, write it
-    if (!fs::exists("liblinoodle.so")) {
-        FILE *linoodle = fopen("liblinoodle.so", "wb");
-
-        if (linoodle == nullptr)
-            return false;
-
-        fwrite(linoodleLib, 1, sizeof(linoodleLib), linoodle);
-        fclose(linoodle);
-    }
-
-    // Load OodleLZ_Decompress from linoodle
-    void *oodle = dlopen("./liblinoodle.so", RTLD_LAZY);
-    *OodLZ_Decompress = reinterpret_cast<OodLZ_DecompressFunc*>(dlsym(oodle, "OodleLZ_Decompress"));
-#endif
-
-    if (*OodLZ_Decompress == nullptr)
-        return false;
-
-    return true;
+    return resultVector;
 }

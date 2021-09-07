@@ -22,19 +22,25 @@ jobs:
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
+      - name: cd to workspace
+        run: cd ${{github.workspace}}
+
       - name: Configure CMake
         run: |
-          cmake -B ${{github.workspace}}\build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -T clangcl
+          cmake -B build -T clangcl
 
       - name: Build
-        run: cmake --build ${{github.workspace}}\build --config ${{env.BUILD_TYPE}}
+        run: cmake --build build --config ${{env.BUILD_TYPE}}
+
+      - name: Rename
+        run: mv build\Release\EternalResourceExtractor.exe EternalResourceExtractor-Windows.exe
 
       - name: Upload Exe
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file_glob: true
-          file: "**/EternalResourceExtractor.exe"
+          file: ${{github.workspace}}/EternalResourceExtractor-Windows.exe
           tag: ${{ github.ref }}
 
   linux-build:
@@ -43,18 +49,55 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: cd to workspace
+        run: cd ${{github.workspace}}
+
       - name: Configure CMake
         run: |
           export CC=gcc-10
           export CXX=g++-10
-          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake -B build
 
       - name: Build
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        run: cmake --build build --config ${{env.BUILD_TYPE}}
+
+      - name: Rename and strip binary
+        run: |
+          mv build/EternalResourceExtractor EternalResourceExtractor-Linux
+          strip EternalResourceExtractor-Linux
 
       - uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           files: |
-            **/EternalResourceExtractor
+            ${{github.workspace}}/EternalResourceExtractor-Linux
+
+  macos-build:
+    runs-on: macos-10.15
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: cd to workspace
+        run: cd ${{github.workspace}}
+
+      - name: Configure CMake
+        run: |
+          cmake -B build
+
+      - name: Build
+        run: cmake --build build --config ${{env.BUILD_TYPE}}
+
+      - name: Rename and strip binary
+        run: |
+          mv build/EternalResourceExtractor EternalResourceExtractor-macOS
+          strip EternalResourceExtractor-macOS
+
+      - name: Upload binary
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file_glob: true
+          file: ${{github.workspace}}/EternalResourceExtractor-macOS
+          tag: ${{ github.ref }}
