@@ -7,8 +7,7 @@ file(GLOB SOURCES
         ./main.cpp
         ./utils.cpp
         ./utils.hpp
-        ./linoodle.hpp
-        ./oo2core.hpp
+        ./oodle.hpp
         ./mmap/mmap.cpp
         ./mmap/mmap.hpp
         ./argh/argh.hpp
