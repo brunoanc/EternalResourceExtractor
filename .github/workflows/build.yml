@@ -17,7 +17,14 @@ jobs:
         shell: pwsh
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Clone repo
+        uses: actions/checkout@v2
+
+      - name: Clone lib repo
+        uses: actions/checkout@v2
+        with:
+          repository: PowerBall253/lib
+          token: ${{secrets.ACCESS_TOKEN}}
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
@@ -38,16 +45,23 @@ jobs:
       - name: Upload Exe
         uses: svenstaro/upload-release-action@v2
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          repo_token: ${{secrets.GITHUB_TOKEN}}
           file_glob: true
           file: ${{github.workspace}}/EternalResourceExtractor-Windows.exe
-          tag: ${{ github.ref }}
+          tag: ${{github.ref}}
 
   linux-build:
     runs-on: ubuntu-18.04
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Clone repo
+        uses: actions/checkout@v2
+
+      - name: Clone lib repo
+        uses: actions/checkout@v2
+        with:
+          repository: PowerBall253/lib
+          token: ${{secrets.ACCESS_TOKEN}}
 
       - name: cd to workspace
         run: cd ${{github.workspace}}
@@ -68,7 +82,7 @@ jobs:
 
       - uses: marvinpinto/action-automatic-releases@latest
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          repo_token: "${{secrets.GITHUB_TOKEN}}"
           prerelease: false
           files: |
             ${{github.workspace}}/EternalResourceExtractor-Linux
@@ -77,7 +91,14 @@ jobs:
     runs-on: macos-10.15
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Clone repo
+        uses: actions/checkout@v2
+
+      - name: Clone lib repo
+        uses: actions/checkout@v2
+        with:
+          repository: PowerBall253/lib
+          token: ${{secrets.ACCESS_TOKEN}}
 
       - name: cd to workspace
         run: cd ${{github.workspace}}
@@ -97,7 +118,7 @@ jobs:
       - name: Upload binary
         uses: svenstaro/upload-release-action@v2
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          repo_token: ${{secrets.GITHUB_TOKEN}}
           file_glob: true
           file: ${{github.workspace}}/EternalResourceExtractor-macOS
-          tag: ${{ github.ref }}
+          tag: ${{github.ref}}
