@@ -329,7 +329,7 @@ int main(int argc, char **argv)
             }
 
             // Decompress file
-            auto *decBytes = new (std::nothrow) unsigned char[size];
+            auto *decBytes = new(std::nothrow) unsigned char[size];
 
             if (decBytes == nullptr)
                 throwError("Failed to allocate memory for extraction.");
