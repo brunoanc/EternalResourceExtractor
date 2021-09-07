@@ -14,7 +14,7 @@ extern "C"
 {
     // OodleDecompressionCalback typedef
     typedef int (LINKAGE OodleDecompressCallback)(void *userdata, const uint8_t *rawBuf, intptr_t rawLen,
-        const uint8_t *compBuf,intptr_t compBufferSize, intptr_t rawDone, intptr_t compUsed);
+        const uint8_t *compBuf, intptr_t compBufferSize, intptr_t rawDone, intptr_t compUsed);
 
     // Oodle decompress function
     intptr_t LINKAGE OodleLZ_Decompress(const void *compBuf, intptr_t compBufSize, void *rawBuf, intptr_t rawLen,
