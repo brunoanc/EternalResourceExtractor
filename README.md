@@ -55,11 +55,19 @@ Then, generate the makefile by running:
 cmake -B "build" # Append "-G 'MSYS Makefiles'" on MSYS
 ```
 
-Finally, build with:
+Afterwards you can build with:
 
 ```
 cmake --build "build" --config Release
 ```
+
+Finally, on Linux and macOS you can run
+
+```
+strip "build/EternalResourceExtractor"
+```
+
+to reduce the binary's filesize.
 
 The EternalResourceExtractor executable will be in the `build` folder in Linux/MinGW/macOS and in the `build\Release` folder in MSVC.
 
