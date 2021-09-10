@@ -302,22 +302,20 @@ int main(int argc, char **argv)
         if (mkpath(filePath, outPath.length()) != 0)
             throwError("Failed to create " + filePath.parent_path().string() + " path for extraction: " + strerror(errno));
 
+        if (size == 0) {
+            // Create empty file and continue
+#ifdef _WIN32
+            FILE *exportFile = _wfopen(filePath.c_str(), L"wb");
+#else
+            FILE *exportFile = fopen(filePath.c_str(), "wb");
+#endif
+            filesExtracted++;
+            memPosition = currentPosition;
+            continue;
+        }
+
         if (size == zSize) {
             // File is decompressed, extract as-is
-
-            if (size == 0) {
-                // Create empty file and continue
-#ifdef _WIN32
-                FILE *exportFile = _wfopen(filePath.c_str(), L"wb");
-#else
-                FILE *exportFile = fopen(filePath.c_str(), "wb");
-#endif
-                fclose(exportFile);
-                filesExtracted++;
-                memPosition = currentPosition;
-                continue;
-            }
-
 #ifdef _WIN32
             MemoryMappedFile *outFile;
 
@@ -347,18 +345,6 @@ int main(int argc, char **argv)
             if (zipFlags & 4) {
                 offset += 12;
                 zSize -= 12;
-            }
-
-            if (size == 0) {
-                // Create empty file and continue
-#ifdef _WIN32
-                FILE *exportFile = _wfopen(filePath.c_str(), L"wb");
-#else
-                FILE *exportFile = fopen(filePath.c_str(), "wb");
-#endif
-                filesExtracted++;
-                memPosition = currentPosition;
-                continue;
             }
 
             // Decompress file
