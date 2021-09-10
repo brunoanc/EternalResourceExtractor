@@ -215,22 +215,20 @@ int main(int argc, char **argv)
     names.reserve(nameCount);
 
     std::vector<char> nameChars;
-    nameChars.reserve(256);
+    nameChars.reserve(512);
 
     size_t currentPosition = memPosition;
 
     for (int i = 0; i < nameCount; i++) {
         memPosition = currentPosition + i * 8;
-
         uint64_t currentNameOffset = memoryMappedFile->readUint64(memPosition);
-
         memPosition = namesOffset + nameCount * 8 + currentNameOffset + 8;
 
-        do {
+        while (*(memoryMappedFile->memp + memPosition) != '\0') {
             const char c = static_cast<char>(*(memoryMappedFile->memp + memPosition));
             nameChars.push_back(c);
             memPosition++;
-        } while (*(memoryMappedFile->memp + memPosition) != '\0');
+        }
 
         names.emplace_back(nameChars.data(), nameChars.size());
         nameChars.clear();
@@ -301,8 +299,8 @@ int main(int argc, char **argv)
         auto filePath = fs::path(outPath + name).make_preferred();
         mkpath(filePath, outPath.length());
 
-        if (ec.value() != 0)
-            throwError("Failed to create path for extraction: " + ec.message());
+        if (mkpath(filePath, outPath.length()) != 0)
+            throwError("Failed to create " + filePath.parent_path().string() + " path for extraction: " + strerror(errno));
 
         if (size == zSize) {
             // File is decompressed, extract as-is
