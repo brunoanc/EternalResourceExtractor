@@ -1,12 +1,15 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cstring>
+#include <sys/stat.h>
 #include "utils.hpp"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <conio.h>
+#include <direct.h>
 #endif
 
 #ifdef _WIN32
@@ -65,3 +68,46 @@ std::vector<std::string> splitString(std::string stringToSplit, const char delim
 
     return resultVector;
 }
+
+// Recursive mkdir
+#ifdef _WIN32
+int mkpath(const fs::path& filePath, size_t startPos)
+{
+    auto path = _wcsdup(filePath.c_str());
+    const char separator = fs::path::preferred_separator;
+
+    for (wchar_t *p = wcschr(path + startPos, separator); p; p = wcschr(p + 1, separator)) {
+        *p = '\0';
+
+        if (_wmkdir(path) == -1 && errno != EEXIST) {
+            *p = separator;
+            return -1;
+        }
+
+        *p = separator;
+    }
+
+    free(path);
+    return 0;
+}
+#else
+int mkpath(const fs::path& filePath, size_t startPos)
+{
+    auto path = strdup(filePath.c_str());
+    const char separator = fs::path::preferred_separator;
+
+    for (char *p = strchr(path + startPos, separator); p; p = strchr(p + 1, separator)) {
+        *p = '\0';
+
+        if (mkdir(path, 0777) == -1 && errno != EEXIST) {
+            *p = separator;
+            return -1;
+        }
+
+        *p = separator;
+    }
+
+    free(path);
+    return 0;
+}
+#endif

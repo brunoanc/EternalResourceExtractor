@@ -103,7 +103,7 @@ int main(int argc, char **argv)
     }
 
     // Get resource & out path
-    std::vector<std::string> args = cmdl.pos_args();
+    const std::vector<std::string> args = cmdl.pos_args();
     std::string resourcePath;
     std::string outPath;
     std::error_code ec;
@@ -298,26 +298,35 @@ int main(int argc, char **argv)
         std::cout << "Extracting " << name << "...\n";
 
         // Create out directory
-        auto path = fs::path(outPath + name).make_preferred();
-        fs::create_directories(path.parent_path(), ec);
+        auto filePath = fs::path(outPath + name).make_preferred();
+        mkpath(filePath, outPath.length());
 
         if (ec.value() != 0)
             throwError("Failed to create path for extraction: " + ec.message());
 
         if (size == zSize) {
             // File is decompressed, extract as-is
-
 #ifdef _WIN32
-            FILE *exportFile = _wfopen(path.c_str(), L"wb");
+            MemoryMappedFile *outFile;
+
+            try {
+                outFile = new MemoryMappedFile(filePath, size, true, true);
+            }
+            catch (std::exception& e) {
+                throwError("Failed to extract " + filePath.string() + " for reading.");
+            }
+
+            memcpy(outFile->memp, memoryMappedFile->memp + offset, size);
+            delete outFile;
 #else
-            FILE *exportFile = fopen(path.c_str(), "wb");
-#endif
+            FILE *exportFile = fopen(filePath.c_str(), "wb");
 
             if (exportFile == nullptr)
-                throwError("Failed to open " + path.string() + " for writing: " + strerror(errno));
+                throwError("Failed to open " + filePath.string() + " for writing: " + strerror(errno));
 
             fwrite(memoryMappedFile->memp + offset, 1, size, exportFile);
             fclose(exportFile);
+#endif
         }
         else {
             // File is compressed, decompress with oodle
@@ -339,18 +348,27 @@ int main(int argc, char **argv)
                 throwError("Failed to decompress " + name + ".");
 
             // Write file to disk
-
 #ifdef _WIN32
-            FILE *exportFile = _wfopen(path.c_str(), L"wb");
+            MemoryMappedFile *outFile;
+
+            try {
+                outFile = new MemoryMappedFile(filePath, size, true, true);
+            }
+            catch (std::exception& e) {
+                throwError("Failed to open " + filePath.string() + " for writing.");
+            }
+
+            memcpy(outFile->memp, decBytes, size);
+            delete outFile;
 #else
-            FILE *exportFile = fopen(path.c_str(), "wb");
-#endif
+            FILE *exportFile = fopen(filePath.c_str(), "wb");
 
             if (exportFile == nullptr)
-                throwError("Failed to open " + path.string() + " for writing: " + strerror(errno));
+                throwError("Failed to open " + filePath.string() + " for writing: " + strerror(errno));
 
             fwrite(decBytes, 1, size, exportFile);
             fclose(exportFile);
+#endif
 
             delete[] decBytes;
         }

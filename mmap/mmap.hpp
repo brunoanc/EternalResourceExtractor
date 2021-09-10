@@ -2,6 +2,7 @@
 #define MMAP_HPP
 
 #include <string>
+#include <filesystem>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -12,6 +13,8 @@
 #include <sys/mman.h>
 #endif
 
+namespace fs = std::filesystem;
+
 // Cross platform memory mapped file
 class MemoryMappedFile {
 public:
@@ -19,7 +22,7 @@ public:
     unsigned char *memp;
     uint64_t size = 0;
 
-    MemoryMappedFile(const std::string filePath);
+    MemoryMappedFile(const fs::path &path, size_t size = -1, bool create = false, bool sequential = false);
     ~MemoryMappedFile();
 
     void unmapFile();
