@@ -305,7 +305,7 @@ int main(int argc, char **argv)
         if (size == zSize) {
             // File is decompressed, extract as-is
 
-            if (size = 0) {
+            if (size == 0) {
                 // Create empty file and continue
 #ifdef _WIN32
                 FILE *exportFile = _wfopen(filePath.c_str(), L"wb");
@@ -349,7 +349,7 @@ int main(int argc, char **argv)
                 zSize -= 12;
             }
 
-            if (size = 0) {
+            if (size == 0) {
                 // Create empty file and continue
 #ifdef _WIN32
                 FILE *exportFile = _wfopen(filePath.c_str(), L"wb");
