@@ -20,7 +20,7 @@ int main(int argc, char **argv)
     char buffer[8192];
     std::cout.rdbuf()->pubsetbuf(buffer, sizeof(buffer));
 
-    std::cout << "EternalResourceExtractor v3.0.0 by PowerBall253\n\n";
+    std::cout << "EternalResourceExtractor v3.1.0 by PowerBall253\n\n";
 
     // Parse arguments
     argh::parser cmdl;
@@ -306,6 +306,20 @@ int main(int argc, char **argv)
 
         if (size == zSize) {
             // File is decompressed, extract as-is
+
+            if (size = 0) {
+                // Create empty file and continue
+#ifdef _WIN32
+                FILE *exportFile = _wfopen(filePath.c_str(), "wb");
+#else
+                FILE *exportFile = fopen(filePath.c_str(), "wb");
+#endif
+                fclose(exportFile);
+                filesExtracted++;
+                memPosition = currentPosition;
+                continue;
+            }
+
 #ifdef _WIN32
             MemoryMappedFile *outFile;
 
@@ -335,6 +349,18 @@ int main(int argc, char **argv)
             if (zipFlags & 4) {
                 offset += 12;
                 zSize -= 12;
+            }
+
+            if (size = 0) {
+                // Create empty file and continue
+#ifdef _WIN32
+                FILE *exportFile = _wfopen(filePath.c_str(), "wb");
+#else
+                FILE *exportFile = fopen(filePath.c_str(), "wb");
+#endif
+                filesExtracted++;
+                memPosition = currentPosition;
+                continue;
             }
 
             // Decompress file
