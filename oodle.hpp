@@ -1,7 +1,7 @@
 #ifndef OODLE_HPP
 #define OODLE_HPP
 
-#include <iostream>
+#include <cstdint>
 
 #ifdef _WIN32
 // Use __stdcall linkage on Windows
