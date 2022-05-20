@@ -29,7 +29,6 @@ int main(int argc, char **argv)
     cmdl.parse(argc, argv);
 
     if (cmdl[{"-h", "--help"}]) {
-        std::cout << cmdl({"-f", "--filter"}).str() << std::endl;
         std::cout << "Usage:\n";
         std::cout << "EternalResourceExtractor [path to .resources file] [out path] [options]\n\n";
         std::cout << "Options:\n\n";
