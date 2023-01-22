@@ -61,8 +61,8 @@ int main(int argc, char **argv)
                     else
                         regexesToMatch.emplace_back(regex, std::regex_constants::ECMAScript | std::regex_constants::optimize);
                 }
-                catch (std::exception& ex) {
-                    throwError("Failed to parse " + regex + " regular expression: " + ex.what());
+                catch (const std::exception& e) {
+                    throwError("Failed to parse " + regex + " regular expression: " + e.what());
                 }
             }
         }
@@ -95,8 +95,8 @@ int main(int argc, char **argv)
                     else
                         regexesToMatch.emplace_back(regex, std::regex_constants::ECMAScript | std::regex_constants::optimize);
                 }
-                catch (std::exception& ex) {
-                    throwError("Failed to parse " + filter + " filter: " + ex.what());
+                catch (const std::exception& e) {
+                    throwError("Failed to parse " + filter + " filter: " + e.what());
                 }
             }
         }
@@ -171,7 +171,7 @@ int main(int argc, char **argv)
     try {
         memoryMappedFile = new MemoryMappedFile(resourcePath);
     }
-    catch (std::exception &e) {
+    catch (const std::exception &e) {
         throwError("Failed to open " + resourcePath + " for reading.");
     }
 
@@ -322,7 +322,7 @@ int main(int argc, char **argv)
             try {
                 outFile = new MemoryMappedFile(filePath, size, true, true);
             }
-            catch (std::exception& e) {
+            catch (const std::exception& e) {
                 throwError("Failed to extract " + filePath.string() + " for reading.");
             }
 
@@ -364,7 +364,7 @@ int main(int argc, char **argv)
             try {
                 outFile = new MemoryMappedFile(filePath, size, true, true);
             }
-            catch (std::exception& e) {
+            catch (const std::exception& e) {
                 throwError("Failed to open " + filePath.string() + " for writing.");
             }
 
