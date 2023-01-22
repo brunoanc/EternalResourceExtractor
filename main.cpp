@@ -309,6 +309,8 @@ int main(int argc, char **argv)
 #else
             FILE *exportFile = fopen(filePath.c_str(), "wb");
 #endif
+            fclose(exportFile);
+
             filesExtracted++;
             memPosition = currentPosition;
             continue;
