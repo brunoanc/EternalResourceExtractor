@@ -7,7 +7,7 @@ file(GLOB SOURCES
         ./main.cpp
         ./utils.cpp
         ./utils.hpp
-        ./oodle.hpp
+        ./ooz.hpp
         ./mmap/mmap.cpp
         ./mmap/mmap.hpp
         ./argh/argh.hpp
@@ -27,9 +27,7 @@ if(MSVC)
 endif()
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-        target_link_libraries(EternalResourceExtractor ${CMAKE_SOURCE_DIR}/lib/oo2core_win64.lib)
+        target_link_libraries(EternalResourceExtractor ${CMAKE_SOURCE_DIR}/lib/ooz.lib)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-        target_link_libraries(EternalResourceExtractor ${CMAKE_DL_LIBS} ${CMAKE_SOURCE_DIR}/lib/liboo2corelinux64.a)
-elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
-        target_link_libraries(EternalResourceExtractor ${CMAKE_DL_LIBS} ${CMAKE_SOURCE_DIR}/lib/liboo2coremac64.a)
+        target_link_libraries(EternalResourceExtractor ${CMAKE_DL_LIBS} ${CMAKE_SOURCE_DIR}/lib/libooz.a)
 endif()

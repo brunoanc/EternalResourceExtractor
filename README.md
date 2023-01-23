@@ -31,22 +31,12 @@ You can also double click on it or drag and drop the .resources file to get star
 
 ## Compiling
 
-NOTE: The static libs from the Oodle SDK are needed to build this project.
-
 The project uses CMake to compile. It also needs MSVC or the MinGW toolchain on MSYS to compile on Windows.
 
 First clone the repo by running:
 
 ```
 git clone https://github.com/PowerBall253/EternalResourceExtractor.git
-```
-
-Then, create a `lib` folder in the repo and place your Oodle static libraries on it. It should look like this:
-
-```
-lib/oo2core_win64.lib
-lib/liboo2corelinux64.a
-lib/liboo2coremac64.a
 ```
 
 Then, generate the makefile by running:

@@ -6,7 +6,7 @@
 #include <chrono>
 #include <regex>
 #include "utils.hpp"
-#include "oodle.hpp"
+#include "ooz.hpp"
 #include "mmap/mmap.hpp"
 #include "argh/argh.h"
 
@@ -341,7 +341,7 @@ int main(int argc, char **argv)
 #endif
         }
         else {
-            // File is compressed, decompress with oodle
+            // File is kraken-compressed, decompress with ooz
 
             // Check oodle flags
             if (zipFlags & 4) {
@@ -355,7 +355,7 @@ int main(int argc, char **argv)
             if (decBytes == nullptr)
                 throwError("Failed to allocate memory for extraction.");
 
-            if (OodleLZ_Decompress(memoryMappedFile->memp + offset, static_cast<int32_t>(zSize),
+            if (Kraken_Decompress(memoryMappedFile->memp + offset, static_cast<int32_t>(zSize),
             decBytes, size) != size)
                 throwError("Failed to decompress " + name + ".");
 
