@@ -10,32 +10,14 @@ env:
 
 jobs:
   windows-build:
-    runs-on: windows-2019
-
-    defaults:
-      run:
-        shell: pwsh
+    runs-on: windows-latest
 
     steps:
       - name: Clone repo
-        uses: actions/checkout@v2
-
-      - name: Clone lib repo
-        uses: actions/checkout@v2
-        with:
-          repository: PowerBall253/lib
-          token: ${{secrets.ACCESS_TOKEN}}
-          path: lib
-
-      - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: cd to workspace
-        run: cd ${{github.workspace}}
+        uses: actions/checkout@v3
 
       - name: Configure CMake
-        run: |
-          cmake -B build -T clangcl
+        run: cmake -B build
 
       - name: Build
         run: cmake --build build --config ${{env.BUILD_TYPE}}
@@ -52,27 +34,14 @@ jobs:
           tag: ${{github.ref}}
 
   linux-build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Clone repo
-        uses: actions/checkout@v2
-
-      - name: Clone lib repo
-        uses: actions/checkout@v2
-        with:
-          repository: PowerBall253/lib
-          token: ${{secrets.ACCESS_TOKEN}}
-          path: lib
-
-      - name: cd to workspace
-        run: cd ${{github.workspace}}
+        uses: actions/checkout@v3
 
       - name: Configure CMake
-        run: |
-          export CC=gcc-10
-          export CXX=g++-10
-          cmake -B build
+        run: cmake -B build
 
       - name: Build
         run: cmake --build build --config ${{env.BUILD_TYPE}}
@@ -88,40 +57,3 @@ jobs:
           prerelease: false
           files: |
             ${{github.workspace}}/EternalResourceExtractor-Linux
-
-  macos-build:
-    runs-on: macos-10.15
-
-    steps:
-      - name: Clone repo
-        uses: actions/checkout@v2
-
-      - name: Clone lib repo
-        uses: actions/checkout@v2
-        with:
-          repository: PowerBall253/lib
-          token: ${{secrets.ACCESS_TOKEN}}
-          path: lib
-
-      - name: cd to workspace
-        run: cd ${{github.workspace}}
-
-      - name: Configure CMake
-        run: |
-          cmake -B build
-
-      - name: Build
-        run: cmake --build build --config ${{env.BUILD_TYPE}}
-
-      - name: Rename and strip binary
-        run: |
-          mv build/EternalResourceExtractor EternalResourceExtractor-macOS
-          strip EternalResourceExtractor-macOS
-
-      - name: Upload binary
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{secrets.GITHUB_TOKEN}}
-          file_glob: true
-          file: ${{github.workspace}}/EternalResourceExtractor-macOS
-          tag: ${{github.ref}}

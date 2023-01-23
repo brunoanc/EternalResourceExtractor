@@ -10,7 +10,7 @@ Small C++ utility to extract files from a DOOM Eternal .resources file.
 * ~2-3x faster than QuickBMS on extracting files.
 * Standalone, does not require any additional files.
 * Lighter than QuickBMS and other extraction tools.
-* Supports Windows, Linux and macOS.
+* Supports Windows and Linux.
 
 ## Usage
 
@@ -51,7 +51,7 @@ Afterwards you can build with:
 cmake --build "build" --config Release
 ```
 
-Finally, on Linux and macOS you can run
+Finally, on Linux you can run
 
 ```
 strip "build/EternalResourceExtractor"
@@ -59,7 +59,7 @@ strip "build/EternalResourceExtractor"
 
 to reduce the binary's filesize.
 
-The EternalResourceExtractor executable will be in the `build` folder in Linux/MinGW/macOS and in the `build\Release` folder in MSVC.
+The EternalResourceExtractor executable will be in the `build` folder in Linux/MinGW and in the `build\Release` folder in MSVC.
 
 ## Credits
 
