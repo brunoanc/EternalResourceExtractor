@@ -29,7 +29,6 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{secrets.GITHUB_TOKEN}}
-          file_glob: true
           file: ${{github.workspace}}/EternalResourceExtractor-Windows.exe
           tag: ${{github.ref}}
 
