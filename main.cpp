@@ -10,6 +10,8 @@
 #include "mmap/mmap.hpp"
 #include "argh/argh.h"
 
+#define SAFE_SPACE 64
+
 namespace chrono = std::chrono;
 
 int main(int argc, char **argv)
@@ -350,7 +352,7 @@ int main(int argc, char **argv)
             }
 
             // Decompress file
-            auto *decBytes = new(std::nothrow) unsigned char[size];
+            auto *decBytes = new(std::nothrow) unsigned char[size + SAFE_SPACE];
 
             if (decBytes == nullptr)
                 throwError("Failed to allocate memory for extraction.");
