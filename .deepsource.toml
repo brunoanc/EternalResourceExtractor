@@ -1,4 +1,6 @@
 version = 1
 
+exclude_patterns = ["argh/argh.h"]
+
 [[analyzers]]
 name = "cxx"

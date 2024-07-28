@@ -73,10 +73,10 @@ std::vector<std::string> splitString(std::string stringToSplit, const char delim
 #ifdef _WIN32
 int mkpath(const fs::path& filePath, size_t startPos)
 {
-    auto path = _wcsdup(filePath.c_str());
+    auto *path = _wcsdup(filePath.c_str());
     const char separator = fs::path::preferred_separator;
 
-    for (wchar_t *p = wcschr(path + startPos, separator); p; p = wcschr(p + 1, separator)) {
+    for (wchar_t *p = wcschr(path + startPos, separator); p != nullptr; p = wcschr(p + 1, separator)) {
         *p = '\0';
 
         if (_wmkdir(path) == -1 && errno != EEXIST) {
@@ -93,10 +93,10 @@ int mkpath(const fs::path& filePath, size_t startPos)
 #else
 int mkpath(const fs::path& filePath, size_t startPos)
 {
-    auto path = strdup(filePath.c_str());
+    auto *path = strdup(filePath.c_str());
     const char separator = fs::path::preferred_separator;
 
-    for (char *p = strchr(path + startPos, separator); p; p = strchr(p + 1, separator)) {
+    for (char *p = strchr(path + startPos, separator); p != nullptr; p = strchr(p + 1, separator)) {
         *p = '\0';
 
         if (mkdir(path, 0777) == -1 && errno != EEXIST) {

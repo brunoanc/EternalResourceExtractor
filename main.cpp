@@ -20,8 +20,8 @@ int main(int argc, char **argv)
     std::ios::sync_with_stdio(false);
 
     // Buffer stdout
-    char buffer[8192];
-    std::cout.rdbuf()->pubsetbuf(buffer, sizeof(buffer));
+    std::array<char, 8192> buffer;
+    std::cout.rdbuf()->pubsetbuf(buffer, buffer.size());
 
     std::cout << "EternalResourceExtractor v3.2.2 by PowerBall253\n\n";
 
@@ -222,7 +222,7 @@ int main(int argc, char **argv)
     size_t currentPosition = memPosition;
 
     for (int i = 0; i < nameCount; i++) {
-        memPosition = currentPosition + i * 8;
+        memPosition = currentPosition + static_cast<size_t>(i) * 8;
         uint64_t currentNameOffset = memoryMappedFile->readUint64(memPosition);
         memPosition = namesOffset + nameCount * 8 + currentNameOffset + 8;
 
@@ -346,7 +346,7 @@ int main(int argc, char **argv)
             // File is kraken-compressed, decompress with ooz
 
             // Check oodle flags
-            if (zipFlags & 4) {
+            if ((zipFlags & 4) != 0) {
                 offset += 12;
                 zSize -= 12;
             }
