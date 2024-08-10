@@ -46,7 +46,7 @@ jobs:
           branch: v3.20
 
       - name: Configure CMake
-        run: cmake -E env CXXFLAGS="-static" cmake -B build
+        run: cmake -B build -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" -DCMAKE_EXE_LINKER_FLAGS="-static"
         shell: alpine.sh {0}
 
       - name: Build
