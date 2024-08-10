@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 
 file(GLOB SOURCES
         ./main.cpp
+        ./extract.cpp
+        ./extract.hpp
         ./utils.cpp
         ./utils.hpp
         ./ooz.hpp

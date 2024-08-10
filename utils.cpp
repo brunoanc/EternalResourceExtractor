@@ -34,7 +34,7 @@ void pressAnyKey()
 }
 
 // Display error and exit
-void throwError(const std::string& error)
+void throwError(const std::string &error)
 {
     std::cout.flush();
     std::cerr << "\nERROR: " << error << std::endl;
@@ -71,7 +71,7 @@ std::vector<std::string> splitString(std::string stringToSplit, const char delim
 
 // Recursive mkdir
 #ifdef _WIN32
-int mkpath(const fs::path& filePath, size_t startPos)
+int mkpath(const fs::path &filePath, size_t startPos)
 {
     auto *path = _wcsdup(filePath.c_str());
     const char separator = fs::path::preferred_separator;
@@ -91,7 +91,7 @@ int mkpath(const fs::path& filePath, size_t startPos)
     return 0;
 }
 #else
-int mkpath(const fs::path& filePath, size_t startPos)
+int mkpath(const fs::path &filePath, size_t startPos)
 {
     auto *path = strdup(filePath.c_str());
     const char separator = fs::path::preferred_separator;
@@ -111,3 +111,60 @@ int mkpath(const fs::path& filePath, size_t startPos)
     return 0;
 }
 #endif
+
+// Populate regex resources from parameters
+void compileRegexes(std::vector<std::regex> &regexesToMatch, std::vector<std::regex> &regexesNotToMatch, const std::vector<std::pair<std::string, std::string>> &params)
+{
+    const std::string charsToEscape = "\\^$*+?.()|{}[]";
+    
+    for (const auto& param : params) {
+        if (param.first == "r" || param.first == "regex") {
+            for (const auto& regex : splitString(param.second, ';')) {
+                // Push regex to vector
+                try {
+                    if (regex[0] == '!')
+                        regexesNotToMatch.emplace_back(regex.substr(1), std::regex_constants::ECMAScript | std::regex_constants::optimize);
+                    else
+                        regexesToMatch.emplace_back(regex, std::regex_constants::ECMAScript | std::regex_constants::optimize);
+                }
+                catch (const std::exception& e) {
+                    throwError("Failed to parse " + regex + " regular expression: " + e.what());
+                }
+            }
+        }
+        else if (param.first == "f" || param.first == "filter") {
+            for (const auto& filter : splitString(param.second, ';')) {
+                // Convert filter into valid regex
+                std::string regex;
+    
+                for (const auto& c : filter) {
+                    switch (c) {
+                        case '?':
+                            regex.push_back('.');
+                            break;
+                        case '*':
+                            regex += ".*";
+                            break;
+                        default:
+                            if (charsToEscape.find(c) != std::string::npos)
+                                regex.push_back('\\'); // Escape character with backslash
+    
+                            regex.push_back(c);
+                            break;
+                    }
+                }
+    
+                // Push regex to vector
+                try {
+                    if (regex[0] == '!')
+                        regexesNotToMatch.emplace_back(regex.substr(1), std::regex_constants::ECMAScript | std::regex_constants::optimize);
+                    else
+                        regexesToMatch.emplace_back(regex, std::regex_constants::ECMAScript | std::regex_constants::optimize);
+                }
+                catch (const std::exception &e) {
+                    throwError("Failed to parse " + filter + " filter: " + e.what());
+                }
+            }
+        }
+    }
+}

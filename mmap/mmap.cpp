@@ -1,3 +1,15 @@
+#include <algorithm>
+#include <filesystem>
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#else
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#endif
+
 #include "mmap.hpp"
 
 // MemoryMappedFile constructor
@@ -42,7 +54,7 @@ MemoryMappedFile::MemoryMappedFile(const fs::path &path, size_t size, bool creat
         throw std::exception();
 
     // Map the file to memory
-    memp = (unsigned char*)mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fileDescriptor, 0);
+    memp = reinterpret_cast<unsigned char*>(mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fileDescriptor, 0));
 
     if (memp == nullptr) {
         close(fileDescriptor);
@@ -76,4 +88,35 @@ void MemoryMappedFile::unmapFile()
 
     size = 0;
     memp = nullptr;
+}
+
+// Read functions
+uint32_t MemoryMappedFile::readUint32LE(size_t &offset)
+{
+    uint32_t result = *reinterpret_cast<uint32_t*>(memp + offset);
+    offset += 4;
+    return result;
+}
+
+uint64_t MemoryMappedFile::readUint64LE(size_t &offset)
+{
+    uint64_t result = *reinterpret_cast<uint64_t*>(memp + offset);
+    offset += 8;
+    return result;
+}
+
+uint32_t MemoryMappedFile::readUint32BE(size_t &offset)
+{
+    uint32_t result = *reinterpret_cast<uint32_t*>(memp + offset);
+    std::reverse(reinterpret_cast<unsigned char*>(&result), reinterpret_cast<unsigned char*>(&result) + 4);
+    offset += 4;
+    return result;
+}
+
+uint64_t MemoryMappedFile::readUint64BE(size_t &offset)
+{
+    uint64_t result = *reinterpret_cast<uint64_t*>(memp + offset);
+    std::reverse(reinterpret_cast<unsigned char*>(&result), reinterpret_cast<unsigned char*>(&result) + 8);
+    offset += 8;
+    return result;
 }
