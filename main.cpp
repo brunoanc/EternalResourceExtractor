@@ -17,7 +17,7 @@ int main(int argc, char **argv)
     std::array<char, 8192> buffer;
     std::cout.rdbuf()->pubsetbuf(buffer.data(), buffer.size());
 
-    std::cout << "EternalResourceExtractor v3.3.0 by powerball253\n\n";
+    std::cout << "EternalResourceExtractor v4.0.0 by powerball253\n\n";
 
     // Parse arguments
     argh::parser cmdl;
