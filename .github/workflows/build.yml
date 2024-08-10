@@ -39,16 +39,23 @@ jobs:
       - name: Clone repo
         uses: actions/checkout@v4
 
+      - name: Setup Alpine
+        uses: jirutka/setup-alpine@v1
+        with:
+          packages: build-base cmake
+          branch: v3.20
+
       - name: Configure CMake
-        run: cmake -B build
+        run: cmake -B build -E env CXXFLAGS="-static"
+        shell: alpine.sh {0}
 
       - name: Build
         run: cmake --build build --config ${{env.BUILD_TYPE}}
+        shell: alpine.sh {0}
 
-      - name: Rename and strip binary
-        run: |
-          mv build/EternalResourceExtractor EternalResourceExtractor-Linux
-          strip EternalResourceExtractor-Linux
+      - name: Rename binary
+        run: mv build/EternalResourceExtractor EternalResourceExtractor-Linux
+        shell: alpine.sh {0}
 
       - uses: marvinpinto/action-automatic-releases@latest
         with:
