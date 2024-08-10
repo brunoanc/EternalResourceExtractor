@@ -22,8 +22,8 @@ public:
     uint64_t readUint64BE(size_t &offset);
 private:
 #ifdef _WIN32
-    HANDLE fileHandle;
-    HANDLE fileMapping;
+    void *fileHandle;
+    void *fileMapping;
 #else
     int fileDescriptor;
 #endif
