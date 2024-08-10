@@ -46,7 +46,7 @@ jobs:
           branch: v3.20
 
       - name: Configure CMake
-        run: cmake -B build -E env CXXFLAGS="-static"
+        run: cmake -E env CXXFLAGS="-static" cmake -B build
         shell: alpine.sh {0}
 
       - name: Build
