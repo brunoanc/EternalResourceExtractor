@@ -1,17 +1,7 @@
 #ifndef MMAP_HPP
 #define MMAP_HPP
 
-#include <string>
 #include <filesystem>
-
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-#else
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/mman.h>
-#endif
 
 namespace fs = std::filesystem;
 
@@ -26,26 +16,17 @@ public:
     ~MemoryMappedFile();
 
     void unmapFile();
-    uint32_t readUint32(const size_t offset);
-    uint64_t readUint64(const size_t offset);
+    uint32_t readUint32LE(size_t &offset);
+    uint64_t readUint64LE(size_t &offset);
+    uint32_t readUint32BE(size_t &offset);
+    uint64_t readUint64BE(size_t &offset);
 private:
 #ifdef _WIN32
-    HANDLE fileHandle;
-    HANDLE fileMapping;
+    void *fileHandle;
+    void *fileMapping;
 #else
     int fileDescriptor;
 #endif
 };
-
-// Read functions - must be in header to avoid unresolved symbol errors
-inline uint32_t MemoryMappedFile::readUint32(const size_t offset)
-{
-    return *(uint32_t*)(memp + offset);
-}
-
-inline uint64_t MemoryMappedFile::readUint64(const size_t offset)
-{
-    return *(uint64_t*)(memp + offset);
-}
 
 #endif

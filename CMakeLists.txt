@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 
 file(GLOB SOURCES
         ./main.cpp
+        ./extract.cpp
+        ./extract.hpp
         ./utils.cpp
         ./utils.hpp
         ./ooz.hpp
@@ -17,7 +19,7 @@ if (MSVC)
         add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
         set(CMAKE_CXX_FLAGS "/O2 /Oi /Ot /GL /EHsc")
 else()
-        set (CMAKE_CXX_FLAGS "-Ofast -DNDEBUG -Wno-unused-result")
+        set (CMAKE_CXX_FLAGS "-Ofast -DNDEBUG -s")
 endif()
 
 add_executable(EternalResourceExtractor ${SOURCES})

@@ -2,7 +2,7 @@
 
 ![Build Status](https://github.com/PowerBall253/EternalResourceExtractor/actions/workflows/build.yml/badge.svg)
 
-Small C++ utility to extract files from a DOOM Eternal .resources file.
+Small C++ utility to extract files from a DOOM Eternal .resources or .wad7 file.
 
 ## Features
 
@@ -17,7 +17,7 @@ Small C++ utility to extract files from a DOOM Eternal .resources file.
 The syntax for the CMD is:
 
 ```
-EternalResourceExtractor.exe [path to .resources file] [out path] [options]
+EternalResourceExtractor.exe [path to .resources/.wad7 file] [out path] [options]
 ```
 
 The supported options are:
@@ -65,3 +65,4 @@ The EternalResourceExtractor executable will be in the `build` folder in Linux/M
 
 * aluigi: For the QuickBMS resource extractor script for The New Colossus.
 * One of infogram's friends: For editing the script to work with DOOM Eternal.
+* tjoener: For the WAD7 file format.
