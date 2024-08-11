@@ -51,14 +51,6 @@ Afterwards you can build with:
 cmake --build "build" --config Release
 ```
 
-Finally, on Linux you can run
-
-```
-strip "build/EternalResourceExtractor"
-```
-
-to reduce the binary's filesize.
-
 The EternalResourceExtractor executable will be in the `build` folder in Linux/MinGW and in the `build\Release` folder in MSVC.
 
 ## Credits
