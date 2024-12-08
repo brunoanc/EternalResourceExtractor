@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <iostream>
 #include <regex>
 #include <cstring>
@@ -12,10 +13,21 @@ void extractFile(const MemoryMappedFile *memoryMappedFile, const std::string &na
 
     // Create out directory
     auto filePath = fs::path(outPath + name).make_preferred();
+
+    if (fs::is_regular_file(filePath.parent_path())) {
+        auto newFilename = filePath.parent_path();
+        newFilename += " (1)";
+        fs::rename(filePath.parent_path(), newFilename);
+    }
+
     mkpath(filePath, outPath.length());
 
     if (mkpath(filePath, outPath.length()) != 0)
         throwError("Failed to create " + filePath.parent_path().string() + " path for extraction: " + strerror(errno));
+
+    if (fs::is_directory(filePath)) {
+        filePath += " (1)";
+    }
 
     if (size == 0) {
         // Create empty file and continue
@@ -126,7 +138,16 @@ bool shouldExtractFile(const std::string &name, const std::vector<std::regex> &r
 size_t extractResource(MemoryMappedFile *memoryMappedFile, const std::string &outPath, const std::vector<std::regex> &regexesToMatch, const std::vector<std::regex> &regexesNotToMatch)
 {
     // Read resource data
-    size_t memPosition = 32;
+    size_t memPosition = 4;
+
+    uint32_t version = memoryMappedFile->readUint32LE(memPosition);
+
+    if (version >= 0xD) {
+        memPosition = 36;
+    }
+    else {
+        memPosition = 32;
+    }
 
     uint32_t fileCount = memoryMappedFile->readUint32LE(memPosition);
     memPosition += 4;
