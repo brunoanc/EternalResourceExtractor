@@ -13,13 +13,6 @@ void extractFile(const MemoryMappedFile *memoryMappedFile, const std::string &na
 
     // Create out directory
     auto filePath = fs::path(outPath + name).make_preferred();
-
-    if (fs::is_regular_file(filePath.parent_path())) {
-        auto newFilename = filePath.parent_path();
-        newFilename += " (1)";
-        fs::rename(filePath.parent_path(), newFilename);
-    }
-
     mkpath(filePath, outPath.length());
 
     if (mkpath(filePath, outPath.length()) != 0)

@@ -99,9 +99,23 @@ int mkpath(const fs::path &filePath, size_t startPos)
     for (char *p = strchr(path + startPos, separator); p != nullptr; p = strchr(p + 1, separator)) {
         *p = '\0';
 
-        if (mkdir(path, 0777) == -1 && errno != EEXIST) {
-            *p = separator;
-            return -1;
+        if (mkdir(path, 0777) == -1) {
+            if (errno == EEXIST) {
+                if (fs::is_regular_file(path)) {
+                    fs::path newPath(path);
+                    newPath += " (1)";
+                    fs::rename(path, newPath);
+
+                    if (mkdir(path, 0777) == -1) {
+                        *p = separator;
+                        return -1;
+                    }
+                }
+            }
+            else {
+                *p = separator;
+                return -1;
+            }
         }
 
         *p = separator;
